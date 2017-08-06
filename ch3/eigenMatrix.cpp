@@ -59,5 +59,25 @@ int main(int argc, char **argv) {
     cout << matrix_33.inverse() << endl;
     //行列式
     cout << matrix_33.determinant() << endl;
+
+    //特征值与特征向量计算（实对称矩阵可以保证对角化成功）
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigen_solver(matrix_33.transpose() * matrix_33);
+    cout << "Eigen values = " << eigen_solver.eigenvalues() << endl;
+    cout << "Eigen vectors = " << eigen_solver.eigenvectors() << endl;
+
+    //解方程：matrix_NN * x = v_Nd
+    Eigen::Matrix<double, MATRIX_SIZE, MATRIX_SIZE> matrix_NN;
+    matrix_NN = Eigen::MatrixXd::Random(MATRIX_SIZE, MATRIX_SIZE);
+    Eigen::Matrix<double, MATRIX_SIZE, 1> v_Nd;
+    v_Nd = Eigen::MatrixXd::Random(MATRIX_SIZE, 1);
+
+    clock_t time_stt = clock();//计时
+    //直接求逆（求逆运算量大，耗时）
+    Eigen::Matrix<double, MATRIX_SIZE, 1> x = matrix_NN.inverse() * v_Nd;
+    cout << "time used in normal inverse is " << 1000 * (clock() - time_stt) / (double) CLOCKS_PER_SEC << "ms" << endl;
+    //用矩阵分解来求，例如QR分解
+    time_stt = clock();
+    x = matrix_NN.colPivHouseholderQr().solve(v_Nd);
+    cout << "time used in QR composition is " << 1000 * (clock() - time_stt) / (double) CLOCKS_PER_SEC << "ms" << endl;
     return 0;
 }
