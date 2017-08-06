@@ -45,6 +45,19 @@ int main(int argc, char **argv) {
     cout << result << endl;
 
     matrix_33 = Eigen::Matrix3d::Random();
-    cout << matrix_33 << endl;
+    cout << matrix_33 << endl << endl;
+
+    //转置
+    cout << matrix_33.transpose() << endl;
+    //各元素和
+    cout << matrix_33.sum() << endl;
+    //迹
+    cout << matrix_33.trace() << endl;
+    //数乘
+    cout << 10 * matrix_33 << endl;
+    //逆
+    cout << matrix_33.inverse() << endl;
+    //行列式
+    cout << matrix_33.determinant() << endl;
     return 0;
 }
