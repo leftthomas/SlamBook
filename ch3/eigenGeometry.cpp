@@ -7,8 +7,11 @@ using namespace std;
 //Eigen几何模块
 #include <Eigen/Geometry>
 
-/*
+/**
  * 本程序演示了Eigen几何模块的使用
+ * @param argc
+ * @param argv
+ * @return
  */
 
 int main(int argc, char **argv) {
@@ -63,10 +66,38 @@ int main(int argc, char **argv) {
     v_rotated = q * v;
     cout << "(1,0,0) after rotation = " << v_rotated.transpose() << endl;
 
-////    课后习题3,注意，四元数初始化的时候顺序是(w,x,y,z)
-//    Eigen::Quaterniond x(0,1,2,3);
-//    cout<<x.coeffs()<<endl;
-//    Eigen::Quaterniond  x_rotated= q * x;
-//    cout << "(0,1,2,3) after rotation = " << x_rotated.coeffs() << endl;
+    /**
+     * 课后习题7,注意，四元数初始化的时候顺序是(w,x,y,z)
+     */
+    Eigen::Quaterniond q1(0.35, 0.2, 0.3, 0.1);
+//    cout<<q1.coeffs()<<endl;
+//    先做归一化
+    q1.normalize();
+//    cout<<q1.coeffs()<<endl;
+    Eigen::Vector3d t2(0.3, 0.1, 0.1);
+
+    Eigen::Quaterniond q2(-0.5, 0.4, -0.1, 0.2);
+//    cout<<q2.coeffs()<<endl;
+    q2.normalize();
+//    cout<<q2.coeffs()<<endl;
+    Eigen::Vector3d t(-0.1, 0.5, 0.3);
+
+//    Tcw为小萝卜一号的欧式变换矩阵
+    Eigen::Isometry3d Tcw = Eigen::Isometry3d::Identity();
+    Tcw.prerotate(q1);
+    Tcw.pretranslate(t2);
+//    cout<<Tcw.matrix()<<endl;
+
+    Eigen::Vector3d p(0.5, 0, 0.2);
+//    先获得p的世界坐标
+    Eigen::Vector3d pw = Tcw.inverse() * p;
+
+//    Tcw2为小萝卜二号的欧式变换矩阵
+    Eigen::Isometry3d Tcw2 = Eigen::Isometry3d::Identity();
+    Tcw2.prerotate(q2);
+    Tcw2.pretranslate(t);
+//    得到pw在小萝卜二号相机坐标系下的坐标
+    Eigen::Vector3d pc = Tcw2 * pw;
+    cout << pc << endl;
     return 0;
 }
