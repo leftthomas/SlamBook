@@ -17,4 +17,7 @@ include_directories(/usr/local/Cellar/eigen/3.3.3/include/eigen3)
 # 添加一个可执行程序
 add_executable(eigenMatrix eigenMatrix.cpp)
 
+# 添加一个可执行程序
+add_executable(eigenGeometry eigenGeometry.cpp)
+
 
