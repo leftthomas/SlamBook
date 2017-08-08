@@ -35,5 +35,15 @@ int main(int argc, char **argv) {
 //    将旋转矩阵转换成欧拉角，按照ZYX的顺序，即RPY角
     Eigen::Vector3d euler_angles = rotation_matrix.eulerAngles(2, 1, 0);
     cout << "yaw pitch roll = " << euler_angles.transpose() << endl;
+
+//    欧式变换矩阵使用Isometry,注意，这是个4*4的矩阵
+    Eigen::Isometry3d T = Eigen::Isometry3d::Identity();
+//    cout<<T.matrix()<<endl;
+//    按照rotation_vector进行旋转
+    T.rotate(rotation_vector);
+//    这里也可以用T.prerotate(rotation_vector);我建议使用这个
+    T.pretranslate(Eigen::Vector3d(1, 3, 4));
+//    注意，不能用T.translate(Eigen::Vector3d(1,3,4));
+    cout << "Transform matrix =\n" << T.matrix() << endl;
     return 0;
 }
