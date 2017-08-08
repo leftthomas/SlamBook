@@ -62,5 +62,11 @@ int main(int argc, char **argv) {
 //    使用四元数旋转一个向量，注意，在数学上是qvq^{-1}，这里软件库将四元数的乘法进行重载了，直接用乘法就行
     v_rotated = q * v;
     cout << "(1,0,0) after rotation = " << v_rotated.transpose() << endl;
+
+////    课后习题3,注意，四元数初始化的时候顺序是(w,x,y,z)
+//    Eigen::Quaterniond x(0,1,2,3);
+//    cout<<x.coeffs()<<endl;
+//    Eigen::Quaterniond  x_rotated= q * x;
+//    cout << "(0,1,2,3) after rotation = " << x_rotated.coeffs() << endl;
     return 0;
 }

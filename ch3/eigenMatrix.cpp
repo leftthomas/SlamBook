@@ -79,5 +79,13 @@ int main(int argc, char **argv) {
     time_stt = clock();
     x = matrix_NN.colPivHouseholderQr().solve(v_Nd);
     cout << "time used in QR composition is " << 1000 * (clock() - time_stt) / (double) CLOCKS_PER_SEC << "ms" << endl;
+
+//    课后习题5
+    Eigen::Matrix<double, 5, 8> m = Eigen::Matrix<double, 5, 8>::Random();
+    cout << m << endl;
+    Eigen::Matrix3d b = m.block(0, 0, 3, 3);
+    cout << b << endl;
+    b = Eigen::Matrix3d::Identity();
+    cout << b << endl;
     return 0;
 }
