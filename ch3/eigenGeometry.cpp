@@ -28,6 +28,12 @@ int main(int argc, char **argv) {
     Eigen::Vector3d v(1, 0, 0);
     Eigen::Vector3d v_rotated = rotation_vector * v;
     cout << "(1,0,0) after rotation = " << v_rotated.transpose() << endl;
+//    或使用旋转矩阵
+    v_rotated = rotation_matrix * v;
+    cout << "(1,0,0) after rotation = " << v_rotated.transpose() << endl;
 
+//    将旋转矩阵转换成欧拉角，按照ZYX的顺序，即RPY角
+    Eigen::Vector3d euler_angles = rotation_matrix.eulerAngles(2, 1, 0);
+    cout << "yaw pitch roll = " << euler_angles.transpose() << endl;
     return 0;
 }
