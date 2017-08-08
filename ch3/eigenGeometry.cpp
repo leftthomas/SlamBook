@@ -42,8 +42,25 @@ int main(int argc, char **argv) {
 //    按照rotation_vector进行旋转
     T.rotate(rotation_vector);
 //    这里也可以用T.prerotate(rotation_vector);我建议使用这个
+//    设置平移向量
     T.pretranslate(Eigen::Vector3d(1, 3, 4));
 //    注意，不能用T.translate(Eigen::Vector3d(1,3,4));
     cout << "Transform matrix =\n" << T.matrix() << endl;
+
+//    用变换矩阵进行坐标变换，其本质相当于R*v+T，否则维数对不上
+    Eigen::Vector3d v_transformed = T * v;
+    cout << "v transformed = " << v_transformed.transpose() << endl;
+
+//    四元数,直接将轴角赋值给四元数，反过来也可以
+    Eigen::Quaterniond q = Eigen::Quaterniond(rotation_vector);
+//    coeffs的顺序是(x,y,z,w), w是实部，其他为虚部
+    cout << "Quaternion = \n" << q.coeffs() << endl;
+//    cout<<q.x()<<q.y()<<q.z()<<q.w()<<endl;
+//    或将旋转矩阵赋值给它
+    q = Eigen::Quaterniond(rotation_matrix);
+    cout << "Quaternion = \n" << q.coeffs() << endl;
+//    使用四元数旋转一个向量，注意，在数学上是qvq^{-1}，这里软件库将四元数的乘法进行重载了，直接用乘法就行
+    v_rotated = q * v;
+    cout << "(1,0,0) after rotation = " << v_rotated.transpose() << endl;
     return 0;
 }
