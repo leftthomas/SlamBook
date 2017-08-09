@@ -38,5 +38,11 @@ int main(int argc, char **argv) {
     cout << "so(3) hat = \n" << Sophus::SO3::hat(so3) << endl;
 //    将反对称矩阵转回so(3)
     cout << "so(3) hat vee = " << Sophus::SO3::vee(Sophus::SO3::hat(so3)).transpose() << endl;
+
+//    利用李代数扰动模型来更新位姿
+    Eigen::Vector3d update_so3(1e-4, 0, 0);
+//    左乘更新
+    Sophus::SO3 SO3_updated = Sophus::SO3::exp(update_so3) * SO3_R;
+    cout << "SO(3) updated = " << SO3_updated << endl;
     return 0;
 }
