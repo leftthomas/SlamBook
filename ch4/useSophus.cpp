@@ -10,7 +10,7 @@ using namespace std;
 
 
 /**
- * 本程序演示了sophus中so3与se3的使用
+ * 本程序演示了sophus中SO(3)与SE(3)的使用
  * @param argc
  * @param argv
  * @return
@@ -39,10 +39,36 @@ int main(int argc, char **argv) {
 //    将反对称矩阵转回so(3)
     cout << "so(3) hat vee = " << Sophus::SO3::vee(Sophus::SO3::hat(so3)).transpose() << endl;
 
-//    利用李代数扰动模型来更新位姿
+//    利用so(3)扰动模型来更新位姿
     Eigen::Vector3d update_so3(1e-4, 0, 0);
 //    左乘更新
     Sophus::SO3 SO3_updated = Sophus::SO3::exp(update_so3) * SO3_R;
     cout << "SO(3) updated = " << SO3_updated << endl;
+
+
+//    SE(3)
+    // 平移向量
+    Eigen::Vector3d t(1, 0, 0);
+//    根据R,t构造SE(3)
+    Sophus::SE3 SE3_Rt(R, t);
+    cout << "SE(3) from R,t =\n " << SE3_Rt << endl;
+//    根据q,t构造SE(3)
+    Sophus::SE3 SE3_qt(q, t);
+    cout << "SE(3) from q,t =\n " << SE3_qt << endl;
+
+//    se(3)是一个六维向量，方便起见，使用typedef
+    typedef Eigen::Matrix<double, 6, 1> Vector6d;
+    Vector6d se3 = SE3_Rt.log();
+    cout << "se(3) = " << se3.transpose() << endl;
+    cout << "se(3) hat = \n" << Sophus::SE3::hat(se3) << endl;
+    cout << "se(3) hat vee = " << Sophus::SE3::vee(Sophus::SE3::hat(se3)).transpose() << endl;
+
+//    利用se(3)扰动模型来更新位姿
+    Vector6d update_se3;
+    update_se3.setZero();
+    update_se3(0, 0) = 1e-4;
+//    cout<<"update_se3 = "<<update_se3.transpose()<<endl;
+    Sophus::SE3 SE3_updated = Sophus::SE3::exp(update_se3) * SE3_Rt;
+    cout << "SE(3) updated = \n" << SE3_updated.matrix() << endl;
     return 0;
 }
