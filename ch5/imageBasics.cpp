@@ -35,5 +35,24 @@ int main(int argc, char **argv) {
 
 //    使用chrono计时
     chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
+//    遍历图像
+    for (size_t y = 0; y < image.rows; ++y) {
+        for (size_t x = 0; x < image.cols; ++x) {
+//            获得图像行指针
+            unsigned char *row_ptr = image.ptr<unsigned char>(y);
+//            获得指定像素数据指针
+            unsigned char *data_ptr = &row_ptr[x * image.channels()];
+//            输出该像素每个通道数据
+            for (int c = 0; c != image.channels(); ++c) {
+//                data为I(x,y)第c个通道的值
+                unsigned char data = data_ptr[c];
+            }
+        }
+    }
+    chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
+    chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double >>(t2 - t1);
+    cout << "遍历图像用时：" << time_used.count() << "秒。" << endl;
+
+
     return 0;
 }
