@@ -35,6 +35,16 @@ int main(int argc, char **argv) {
         colorImgs.push_back(cv::imread((fmt % "color" % (i + 1) % "png").str()));
 //        使用-1读取原始图像
         depthImgs.push_back(cv::imread((fmt % "depth" % (i + 1) % "pgm").str(), -1));
+//        读取对应位姿
+        double data[7] = {0};
+        for (auto &d:data) {
+            fin >> d;
+        }
+//        构造变换矩阵
+        Eigen::Quaterniond q(data[6], data[3], data[4], data[5]);
+        Eigen::Isometry3d T(q);
+        T.pretranslate(Eigen::Vector3d(data[0], data[1], data[2]));
+        poses.push_back(T);
     }
 
     return 0;
