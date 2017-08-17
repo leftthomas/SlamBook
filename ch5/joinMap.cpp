@@ -99,6 +99,10 @@ int main(int argc, char **argv) {
     pointCloud->is_dense = false;
     cout << "点云共有" << pointCloud->size() << "个点." << endl;
     pcl::io::savePCDFileBinary("../../ch5/map.pcd", *pointCloud);
-//    查看pcd文件在Mac上需要通过pcl_vlp_viewer map.pcd
+    /**
+     * 如果是通过brew install pcl安装的pcl,那么查看pcd文件在Mac上需要通过
+     * /usr/local/Cellar/pcl/1.8.0_8/pcl_viewer.app/Contents/MacOS/pcl_viewer map.pcd 调用
+     * 这个很奇葩，不像ubuntu那样可以直接通过pcl_viewer map.pcd 调用
+     */
     return 0;
 }
