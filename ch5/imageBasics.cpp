@@ -53,6 +53,22 @@ int main(int argc, char **argv) {
     chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
     cout << "遍历图像用时：" << time_used.count() << "秒。" << endl;
 
+//    直接赋值图像不会复制数据
+    cv::Mat image_another = image;
+//    将图像左上角100*100的块置零
+    image_another(cv::Rect(0, 0, 100, 100)).setTo(0);
+//    修改image_another会导致image也发生变化
+    cv::imshow("image", image);
+    cv::waitKey(0);
 
+//    使用clone函数复制图像，会直接复制数据
+    cv::Mat image_clone = image.clone();
+    image_clone(cv::Rect(0, 0, 100, 100)).setTo(255);
+    cv::imshow("image", image);
+    cv::imshow("image_clone", image_clone);
+    cv::waitKey(0);
+
+//    貌似这句话并没什么用
+    cv::destroyAllWindows();
     return 0;
 }
