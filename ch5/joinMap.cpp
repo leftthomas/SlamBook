@@ -47,5 +47,58 @@ int main(int argc, char **argv) {
         poses.push_back(T);
     }
 
+
+//    相机内参
+    double cx = 325.5;
+    double cy = 253.5;
+    double fx = 518.0;
+    double fy = 519.0;
+    double depthScale = 1000.0;
+
+    cout << "正在将图像转换为点云..." << endl;
+//    定义点云使用的格式为XYZRGB
+    typedef pcl::PointXYZRGB PointT;
+    typedef pcl::PointCloud<PointT> PointCloud;
+
+//    新建点云
+    PointCloud::Ptr pointCloud(new PointCloud);
+    for (int i = 0; i < 5; ++i) {
+        cout << "转换图像中:" << i + 1 << endl;
+        cv::Mat color = colorImgs[i];
+        cv::Mat depth = depthImgs[i];
+        Eigen::Isometry3d T = poses[i];
+//        v在前,u在后
+        for (int v = 0; v < color.rows; ++v) {
+            for (int u = 0; u < color.cols; ++u) {
+//                深度值
+                unsigned int d = depth.ptr<unsigned short>(v)[u];
+//                0表示没有测量到
+                if (d == 0) continue;
+//                得到相机坐标
+                Eigen::Vector3d point;
+                point[2] = double(d) / depthScale;
+                point[0] = (u - cx) * point[2] / fx;
+                point[1] = (v - cy) * point[2] / fy;
+//                得到世界坐标
+                Eigen::Vector3d pointWorld = T * point;
+
+//                构造点云的点
+                PointT p;
+                p.x = pointWorld[0];
+                p.y = pointWorld[1];
+                p.z = pointWorld[2];
+//                OpenCV默认图像排列是BGR
+                p.b = color.data[v * color.step + u * color.channels()];
+                p.g = color.data[v * color.step + u * color.channels() + 1];
+                p.r = color.data[v * color.step + u * color.channels() + 2];
+                pointCloud->points.push_back(p);
+            }
+        }
+    }
+
+    pointCloud->is_dense = false;
+    cout << "点云共有" << pointCloud->size() << "个点." << endl;
+    pcl::io::savePCDFileBinary("../../ch5/map.pcd", *pointCloud);
+//    查看pcd文件在Mac上需要通过pcl_vlp_viewer map.pcd
     return 0;
 }
