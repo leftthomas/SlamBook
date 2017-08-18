@@ -22,12 +22,10 @@ find_package(G2O REQUIRED)
 include_directories(${G2O_INCLUDE_DIRS})
 
 # eigen
-#include_directories(/usr/include/eigen3)
-
-# in osx and brew install
-include_directories(/usr/local/Cellar/eigen/3.3.4/include/eigen3)
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIRS})
 
 add_executable(useG2o useG2o.cpp)
-target_link_libraries(useG2o ${G2O_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(useG2o ${OpenCV_LIBRARIES} g2o_core g2o_stuff)
 
 
