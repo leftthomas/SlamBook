@@ -51,5 +51,34 @@ int main(int argc, char **argv) {
         y_data.push_back(exp(a * x * x + b * x + c) + rng.gaussian(w_sigma));
         cout << x_data[i] << " " << y_data[i] << endl;
     }
+
+//    构建最小二乘问题
+    ceres::Problem problem;
+    for (int i = 0; i < N; ++i) {
+//        向问题中添加误差项
+        problem.AddResidualBlock(
+//                使用自动求导,参数:误差类型,输出维度,输入维度
+                new ceres::AutoDiffCostFunction<CURVE_FITTING_COST, 1, 3>(
+                        new CURVE_FITTING_COST(x_data[i], y_data[i])),
+                nullptr,//核函数,这里不使用
+                abc//待估计参数
+        );
+    }
+
+//    配置求解器
+    ceres::Solver::Options options;
+//    增量方程如何求解
+    options.linear_solver_type = ceres::DENSE_QR;
+    options.minimizer_progress_to_stdout = true;
+//    优化信息
+    ceres::Solver::Summary summary;
+    chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
+//    开始优化
+    ceres::Solve(options, &problem, &summary);
+    chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
+    chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
+    cout << "solve time cost = " << time_used.count() << " seconds." << endl;
+
+
     return 0;
 }
