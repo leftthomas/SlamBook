@@ -6,10 +6,7 @@
 #include <g2o/core/optimization_algorithm_gauss_newton.h>
 #include <g2o/core/optimization_algorithm_dogleg.h>
 #include <g2o/solvers/dense/linear_solver_dense.h>
-#include <Eigen/Core>
 #include <opencv2/core/core.hpp>
-#include <cmath>
-#include <chrono>
 
 using namespace std;
 
@@ -123,5 +120,18 @@ int main(int argc, char **argv) {
         edge->setInformation(Eigen::Matrix<double, 1, 1>::Identity() / (w_sigma * w_sigma));
         optimizer.addEdge(edge);
     }
+
+//    执行优化
+    cout << "start optimization" << endl;
+    chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
+    optimizer.initializeOptimization();
+    optimizer.optimize(100);
+    chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
+    chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
+    cout << "solve time cost = " << time_used.count() << " seconds." << endl;
+
+//    输出优化值
+    Eigen::Vector3d abc_estimate = v->estimate();
+    cout << "estimated model:" << abc_estimate.transpose() << endl;
     return 0;
 }

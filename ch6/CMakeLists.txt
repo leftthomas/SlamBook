@@ -21,6 +21,12 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 find_package(G2O REQUIRED)
 include_directories(${G2O_INCLUDE_DIRS})
 
+# eigen
+#include_directories(/usr/include/eigen3)
+
+# in osx and brew install
+include_directories(/usr/local/Cellar/eigen/3.3.4/include/eigen3)
+
 add_executable(useG2o useG2o.cpp)
 target_link_libraries(useG2o ${G2O_LIBRARIES} ${OpenCV_LIBRARIES})
 
