@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 2.8)
 
 project(useCeres)
 
-# 使用find_package找到Ceres
+# 找Ceres库
 find_package(Ceres REQUIRED)
-include_directories(${Ceres_INCLUDE_DIRS})
+include_directories(${CERES_INCLUDE_DIRS})
 
-# 寻找OpenCV库
+# 找OpenCV库
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
