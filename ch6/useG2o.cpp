@@ -63,7 +63,26 @@ public:
  * @return
  */
 int main(int argc, char **argv) {
+//    真实参数值
+    double a = 1.0, b = 2.0, c = 1.0;
+//    数据点个数
+    int N = 100;
+//    噪声sigma值
+    double w_sigma = 1.0;
+//    OpenCV随机数产生器
+    cv::RNG rng;
+//    abc参数估计值
+    double abc[3] = {0, 0, 0};
+//    数据
+    vector<double> x_data, y_data;
 
+    cout << "生成数据：" << endl;
+    for (int i = 0; i < N; ++i) {
+        double x = i / 100.0;
+        x_data.push_back(x);
+        y_data.push_back(exp(a * x * x + b * x + c) + rng.gaussian(w_sigma));
+        cout << x_data[i] << " " << y_data[i] << endl;
+    }
 
     return 0;
 }
