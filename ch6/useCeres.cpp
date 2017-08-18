@@ -79,6 +79,10 @@ int main(int argc, char **argv) {
     chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
     cout << "solve time cost = " << time_used.count() << " seconds." << endl;
 
-
+//    输出结果
+    cout << summary.BriefReport() << endl;
+    cout << "estimated a,b,c = ";
+    for (auto item:abc) cout << item << " ";
+    cout << endl;
     return 0;
 }
