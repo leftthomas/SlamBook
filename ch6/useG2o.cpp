@@ -106,5 +106,22 @@ int main(int argc, char **argv) {
 //    打开调试输出
     optimizer.setVerbose(true);
 
+//    向图中添加顶点
+    CurveFittingVertex *v = new CurveFittingVertex();
+    v->setEstimate(Eigen::Vector3d(0, 0, 0));
+    v->setId(0);
+    optimizer.addVertex(v);
+
+//    向图中添加边
+    for (int i = 0; i < N; ++i) {
+        CurveFittingEdge *edge = new CurveFittingEdge(x_data[i]);
+        edge->setId(i);
+//        设置连接的顶点
+        edge->setVertex(0, v);
+        edge->setMeasurement(y_data[i]);
+//        信息矩阵：协方差矩阵之逆
+        edge->setInformation(Eigen::Matrix<double, 1, 1>::Identity() / (w_sigma * w_sigma));
+        optimizer.addEdge(edge);
+    }
     return 0;
 }
