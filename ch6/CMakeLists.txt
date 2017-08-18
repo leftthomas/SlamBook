@@ -19,7 +19,12 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
 # 找g2o库
 find_package(G2O REQUIRED)
-include_directories(${G2O_INCLUDE_DIRS} "/usr/local/eigen3")
+include_directories(${G2O_INCLUDE_DIRS})
+
+###以下这两句Mac下必须有，ubuntu不需要，不要问我为什么，我也不知道#####
+set(LINK_DIR /usr/local/lib)
+link_directories(${LINK_DIR})
+#########不然的话g2o_core g2o_stuff这两个动态库链接不上############
 
 add_executable(useG2o useG2o.cpp)
 target_link_libraries(useG2o ${OpenCV_LIBRARIES} g2o_core g2o_stuff)
