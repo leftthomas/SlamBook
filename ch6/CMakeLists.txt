@@ -14,7 +14,14 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 add_executable(useCeres useCeres.cpp)
 target_link_libraries(useCeres ${CERES_LIBRARIES} ${OpenCV_LIBRARIES})
 
+# 添加cmake模块以使用g2o库
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
+
+# 找g2o库
+find_package(G2O REQUIRED)
+include_directories(${G2O_INCLUDE_DIRS})
+
 add_executable(useG2o useG2o.cpp)
-target_link_libraries(useG2o ${CERES_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(useG2o ${G2O_LIBRARIES} ${OpenCV_LIBRARIES})
 
 
