@@ -54,6 +54,7 @@ public:
     virtual bool read(istream &in) {}
 
     virtual bool write(ostream &out) const {}
+
 };
 
 /**
@@ -83,6 +84,27 @@ int main(int argc, char **argv) {
         y_data.push_back(exp(a * x * x + b * x + c) + rng.gaussian(w_sigma));
         cout << x_data[i] << " " << y_data[i] << endl;
     }
+
+//    构建图优化
+//    矩阵块：误差项优化变量维度为3，误差值维度为1
+    typedef g2o::BlockSolver<g2o::BlockSolverTraits<3, 1>> Block;
+//    线性方程求解器：稠密的增量方程
+    Block::LinearSolverType *linearSolver = new g2o::LinearSolverDense<Block::PoseMatrixType>();
+//    矩阵块求解器
+    Block *solver_ptr = new Block(linearSolver);
+//    梯度下降方法
+//    LM
+    g2o::OptimizationAlgorithmLevenberg *solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+//    GN
+//    g2o::OptimizationAlgorithmGaussNewton* solver=new g2o::OptimizationAlgorithmGaussNewton(solver_ptr);
+//    DogLeg
+//    g2o::OptimizationAlgorithmDogleg* solver=new g2o::OptimizationAlgorithmDogleg(solver_ptr);
+//    图模型
+    g2o::SparseOptimizer optimizer;
+//    设置求解器
+    optimizer.setAlgorithm(solver);
+//    打开调试输出
+    optimizer.setVerbose(true);
 
     return 0;
 }
