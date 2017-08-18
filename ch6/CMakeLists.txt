@@ -19,11 +19,7 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
 # 找g2o库
 find_package(G2O REQUIRED)
-include_directories(${G2O_INCLUDE_DIRS})
-
-# eigen
-find_package(Eigen3 REQUIRED)
-include_directories(${EIGEN3_INCLUDE_DIRS})
+include_directories(${G2O_INCLUDE_DIRS} "/usr/local/eigen3")
 
 add_executable(useG2o useG2o.cpp)
 target_link_libraries(useG2o ${OpenCV_LIBRARIES} g2o_core g2o_stuff)

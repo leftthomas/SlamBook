@@ -7,7 +7,7 @@
 #include <g2o/core/optimization_algorithm_dogleg.h>
 #include <g2o/solvers/dense/linear_solver_dense.h>
 #include <opencv2/core/core.hpp>
-
+#include <chrono>
 using namespace std;
 
 //曲线模型的顶点，参数：优化变量维度和数据类型
