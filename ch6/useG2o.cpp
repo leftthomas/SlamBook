@@ -34,6 +34,28 @@ public:
     virtual bool write(ostream &out) const {}
 };
 
+//误差模型，参数：观测值维度，类型，连接顶点类型
+class CurveFittingEdge : public g2o::BaseUnaryEdge<1, double, CurveFittingVertex> {
+public:
+//    x值，y值为_measurement
+    double _x;
+
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    CurveFittingEdge(double x) : BaseUnaryEdge(), _x{x} {}
+
+//    计算曲线模型误差
+    void computeError() {
+        const CurveFittingVertex *v = static_cast<const CurveFittingVertex *>(_vertices[0]);
+        const Eigen::Vector3d abc = v->estimate();
+        _error(0, 0) = _measurement - exp(abc(0, 0) * _x * _x + abc(1, 0) * _x + abc(2, 0));
+    }
+
+    virtual bool read(istream &in) {}
+
+    virtual bool write(ostream &out) const {}
+};
+
 /**
  * 本程序演示了g2o的使用
  * @param argc
