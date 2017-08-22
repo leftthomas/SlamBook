@@ -57,9 +57,25 @@ int main(int argc, char **argv) {
         if (dist > max_dist) max_dist = dist;
     }
 
-    printf("-- max dist : %f \n", max_dist);
-    printf("-- min dist : %f \n", min_dist);
+    cout << "max dist :" << max_dist << endl;
+    cout << "min dist :" << min_dist << endl;
 
+//    当描述子之间的距离大于两倍的最小距离时,即认为匹配有误,同时设置一个最小距离下限,这里取了经验值30
+    vector<DMatch> good_matches;
+    for (int i = 0; i < descriptors_1.rows; ++i) {
+        if (matches[i].distance <= max(2 * min_dist, 30.0)) {
+            good_matches.push_back(matches[i]);
+        }
+    }
+
+//    第五步：绘制匹配结果
+    Mat img_match, img_good_match;
+    drawMatches(img_1, key_points_1, img_2, key_points_2, matches, img_match);
+    drawMatches(img_1, key_points_1, img_2, key_points_2, good_matches, img_good_match);
+    imshow("所有匹配点对", img_match);
+    waitKey(0);
+    imshow("优化匹配点对", img_good_match);
+    waitKey(0);
 
     return 0;
 }
