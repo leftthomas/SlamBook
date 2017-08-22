@@ -11,4 +11,6 @@ set(CMAKE_CXX_STANDARD 11)
 
 #add_subdirectory(ch5)
 
-add_subdirectory(ch6)
+#add_subdirectory(ch6)
+
+add_subdirectory(ch7)
