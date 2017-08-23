@@ -1,7 +1,7 @@
 #include<iostream>
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
-
+#include <opencv2/calib3d/calib3d.hpp>
 using namespace std;
 using namespace cv;
 
@@ -66,10 +66,16 @@ void pose_estimation_2d2d(vector<KeyPoint> key_points_1, vector<KeyPoint> key_po
 //    将匹配点转换成Point2f格式
     vector<Point2f> points_1;
     vector<Point2f> points_2;
-    for (int i = 0; i < matches.size(); ++i) {
-        points_1.push_back(key_points_1[matches[i].queryIdx].pt);
-        points_2.push_back(key_points_2[matches[i].trainIdx].pt);
+    for (auto &match : matches) {
+        points_1.push_back(key_points_1[match.queryIdx].pt);
+        points_2.push_back(key_points_2[match.trainIdx].pt);
     }
+
+//    计算基础矩阵,采用八点法
+    Mat fundamental_matrix;
+    fundamental_matrix = findFundamentalMat(points_1, points_2, CV_FM_8POINT);
+    cout << "fundamental matrix is \n" << fundamental_matrix << endl;
+
 };
 
 
