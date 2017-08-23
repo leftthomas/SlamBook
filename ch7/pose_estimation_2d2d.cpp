@@ -6,6 +6,7 @@
 using namespace std;
 using namespace cv;
 
+
 /**
  * 找到图像间的特征点匹配
  * @param img_1
@@ -14,7 +15,7 @@ using namespace cv;
  * @param key_points_2
  * @param matches
  */
-void find_feature_matches(const Mat &img_1, Mat &img_2, vector<KeyPoint> &key_points_1,
+void find_feature_matches(const Mat &img_1, const Mat &img_2, vector<KeyPoint> &key_points_1,
                           vector<KeyPoint> &key_points_2, vector<DMatch> &matches) {
 
     Mat descriptors_1, descriptors_2;
@@ -150,6 +151,7 @@ void triangulation(const vector<KeyPoint> &key_points_1, const vector<KeyPoint> 
         points.push_back(p);
     }
 }
+
 
 /**
  * 本程序演示了对极约束求解相机运动以及三角测量
