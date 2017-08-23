@@ -2,6 +2,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/highgui/highgui.hpp>
 using namespace std;
 using namespace cv;
 
@@ -76,6 +77,24 @@ void pose_estimation_2d2d(vector<KeyPoint> key_points_1, vector<KeyPoint> key_po
     fundamental_matrix = findFundamentalMat(points_1, points_2, CV_FM_8POINT);
     cout << "fundamental matrix is \n" << fundamental_matrix << endl;
 
+//    计算本质矩阵
+//    光心,TUM dataset标定值
+    Point2d principal_point(325.1, 249.7);
+//    焦距,TUM dataset标定值
+    int focal_length = 521;
+    Mat essential_matrix;
+    essential_matrix = findEssentialMat(points_1, points_2, focal_length, principal_point, RANSAC);
+    cout << "essential matrix is \n" << essential_matrix << endl;
+
+//    计算单应矩阵
+    Mat homography_matrix;
+    homography_matrix = findHomography(points_1, points_2, RANSAC);
+    cout << "homography matrix is \n" << homography_matrix << endl;
+
+//    从本质矩阵中恢复旋转和平移
+    recoverPose(essential_matrix, points_1, points_2, R, t, focal_length, principal_point);
+    cout << "R is \n" << R << endl;
+    cout << "t is \n" << t << endl;
 };
 
 
@@ -86,6 +105,17 @@ void pose_estimation_2d2d(vector<KeyPoint> key_points_1, vector<KeyPoint> key_po
  * @return
  */
 int main(int argc, char **argv) {
+
+//    判断命令行参数是否有给出两张图片路径
+    if (argc != 3) {
+        cout << "usage: pose_estimation_2d2d img1 img2" << endl;
+        return 1;
+    }
+
+//    读取图像
+    Mat img_1 = imread(argv[1], CV_LOAD_IMAGE_COLOR);
+    Mat img_2 = imread(argv[2], CV_LOAD_IMAGE_COLOR);
+
 
     return 0;
 }
