@@ -60,9 +60,6 @@ void find_feature_matches(const Mat &img_1, Mat &img_2, vector<KeyPoint> &key_po
  */
 void pose_estimation_2d2d(vector<KeyPoint> key_points_1, vector<KeyPoint> key_points_2,
                           vector<DMatch> matches, Mat &R, Mat &t) {
-//    相机内参，TUM Freiburg2
-    Mat1d K(3, 3);
-    K << 520.9, 0, 325.1, 0, 521.0, 249.7, 0, 0, 1;
 
 //    将匹配点转换成Point2f格式
     vector<Point2f> points_1;
@@ -97,6 +94,19 @@ void pose_estimation_2d2d(vector<KeyPoint> key_points_1, vector<KeyPoint> key_po
     cout << "t is \n" << t << endl;
 };
 
+/**
+ * 根据相机内参矩阵将像素坐标转换为相机坐标
+ * @param p
+ * @param K
+ * @return
+ */
+Point2d pixel2cam(const Point2d &p, const Mat &K) {
+    return Point2d
+            (
+                    (p.x - K.at<double>(0, 2)) / K.at<double>(0, 0),
+                    (p.y - K.at<double>(1, 2)) / K.at<double>(1, 1)
+            );
+}
 
 /**
  * 本程序演示了对极约束求解相机运动
@@ -120,5 +130,27 @@ int main(int argc, char **argv) {
     vector<DMatch> matches;
     find_feature_matches(img_1, img_2, key_points_1, key_points_2, matches);
     cout << "一共找到" << matches.size() << "组匹配点" << endl;
+
+//    估计图像间的运动
+    Mat R, t;
+    pose_estimation_2d2d(key_points_1, key_points_2, matches, R, t);
+//    验证E=t^R*scale
+    Mat1d t_x(3, 3);
+    t_x << 0, -t.at<double>(2, 0), t.at<double>(1, 0), t.at<double>(2, 0), 0, -t.at<double>(0, 0),
+            -t.at<double>(1, 0), t.at<double>(0, 0), 0;
+    cout << "t^R=\n" << t_x * R << endl;
+//    验证对极约束
+    Mat1d K(3, 3);
+    K << 520.9, 0, 325.1, 0, 521.0, 249.7, 0, 0, 1;
+    for (DMatch m : matches) {
+        Point2d pt1 = pixel2cam(key_points_1[m.queryIdx].pt, K);
+        Mat1d y1(3, 1);
+        y1 << pt1.x, pt1.y, 1;
+        Point2d pt2 = pixel2cam(key_points_2[m.trainIdx].pt, K);
+        Mat1d y2(3, 1);
+        y2 << pt2.x, pt2.y, 1;
+        Mat d = y2.t() * t_x * R * y1;
+        cout << "epipolar constraint = " << d << endl;
+    }
     return 0;
 }
