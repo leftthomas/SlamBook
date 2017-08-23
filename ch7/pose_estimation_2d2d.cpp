@@ -44,7 +44,7 @@ void find_feature_matches(const Mat &img_1, Mat &img_2, vector<KeyPoint> &key_po
 //    当描述子之间的距离大于两倍的最小距离时,即认为匹配有误,同时设置一个最小距离下限,这里取了经验值30
     for (int i = 0; i < descriptors_1.rows; ++i) {
         if (match[i].distance <= max(2 * min_dist, 30.0)) {
-            matches.push_back(matches[i]);
+            matches.push_back(match[i]);
         }
     }
 }
@@ -116,6 +116,9 @@ int main(int argc, char **argv) {
     Mat img_1 = imread(argv[1], CV_LOAD_IMAGE_COLOR);
     Mat img_2 = imread(argv[2], CV_LOAD_IMAGE_COLOR);
 
-
+    vector<KeyPoint> key_points_1, key_points_2;
+    vector<DMatch> matches;
+    find_feature_matches(img_1, img_2, key_points_1, key_points_2, matches);
+    cout << "一共找到" << matches.size() << "组匹配点" << endl;
     return 0;
 }
