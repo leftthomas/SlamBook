@@ -82,12 +82,12 @@ void pose_estimation_2d2d(vector<KeyPoint> key_points_1, vector<KeyPoint> key_po
 //    焦距,TUM dataset标定值
     int focal_length = 521;
     Mat essential_matrix;
-    essential_matrix = findEssentialMat(points_1, points_2, focal_length, principal_point, RANSAC);
+    essential_matrix = findEssentialMat(points_1, points_2, focal_length, principal_point);
     cout << "essential matrix is \n" << essential_matrix << endl;
 
 //    计算单应矩阵
     Mat homography_matrix;
-    homography_matrix = findHomography(points_1, points_2, RANSAC, 3, noArray(), 2000, 0.99);
+    homography_matrix = findHomography(points_1, points_2, RANSAC);
     cout << "homography matrix is \n" << homography_matrix << endl;
 
 //    从本质矩阵中恢复旋转和平移
@@ -147,8 +147,8 @@ void triangulation(const vector<KeyPoint> &key_points_1, const vector<KeyPoint> 
     for (int i = 0; i < pts_4d.cols; ++i) {
         Mat x = pts_4d.col(i);
 //        归一化
-        x /= x.at<float>(3, 0);
-        Point3d p(x.at<float>(0, 0), x.at<float>(1, 0), x.at<float>(2, 0));
+        x /= x.at<double>(3, 0);
+        Point3d p(x.at<double>(0, 0), x.at<double>(1, 0), x.at<double>(2, 0));
         points.push_back(p);
     }
 }
