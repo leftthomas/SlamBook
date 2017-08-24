@@ -24,7 +24,7 @@ void find_feature_matches(
 Point2d pixel2cam(const Point2d &p, const Mat &K);
 
 // BA求解
-void bundleAdjustment(const vector<Point3f> points_3d, const vector<Point2f> points_2d, const Mat &K, Mat &R, Mat &t);
+void bundleAdjustment(vector<Point3f> points_3d, vector<Point2f> points_2d, const Mat &K, Mat &R, Mat &t);
 
 /**
  * 本程序演示了PnP求解相机位姿,BA优化位姿与3D空间点坐标
@@ -125,13 +125,13 @@ Point2d pixel2cam(const Point2d &p, const Mat &K) {
             );
 }
 
-void bundleAdjustment(const vector<Point3f> points_3d, const vector<Point2f> points_2d,
+void bundleAdjustment(vector<Point3f> points_3d, vector<Point2f> points_2d,
                       const Mat &K, Mat &R, Mat &t) {
 //    初始化g2o,pose维度为6,landmark维度为3
     typedef g2o::BlockSolver<g2o::BlockSolverTraits<6, 3>> Block;
     Block::LinearSolverType *linearSolver = new g2o::LinearSolverCSparse<Block::PoseMatrixType>();
-    Block *solver_ptr = new Block(linearSolver);
-    g2o::OptimizationAlgorithmLevenberg *solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+    auto *solver_ptr = new Block(linearSolver);
+    auto *solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
     g2o::SparseOptimizer optimizer;
     optimizer.setAlgorithm(solver);
 
