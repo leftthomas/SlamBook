@@ -7,10 +7,13 @@
 #include <g2o/core/block_solver.h>
 #include <g2o/types/sba/types_six_dof_expmap.h>
 #include <g2o/solvers/eigen/linear_solver_eigen.h>
-
+#include <g2o/core/optimization_algorithm_gauss_newton.h>
 
 // ICP姿态评估
 void pose_estimation_3d3d(const vector<Point3f> &pts_1, const vector<Point3f> &pts_2, Mat &R, Mat &t);
+
+// BA求解
+void bundleAdjustment(const vector<Point3f> &pts_1, const vector<Point3f> &pts_2, Mat &R, Mat &t);
 
 // 自定义3D-3D的边
 class EdgeProjectXYZRGBDPoseOnly : public g2o::BaseUnaryEdge<3, Eigen::Vector3d, g2o::VertexSE3Expmap> {
@@ -19,17 +22,17 @@ protected:
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-    EdgeProjectXYZRGBDPoseOnly(const Eigen::Vector3d &point) : _point(point) {}
+    explicit EdgeProjectXYZRGBDPoseOnly(const Eigen::Vector3d &point) : _point(point) {}
 
-    virtual void computeError() {
-        const g2o::VertexSE3Expmap *pose = static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
+    void computeError() override {
+        const auto *pose = static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
 //        measurement is p, point is p'
         _error = _measurement - pose->estimate().map(_point);
     }
 
-    virtual void linearizeOplus() {
-        g2o::VertexSE3Expmap *pose = static_cast<g2o::VertexSE3Expmap *>(_vertices[0]);
-        g2o::SE3Quat T(pose->estimate());
+    void linearizeOplus() override {
+        auto *pose = static_cast<g2o::VertexSE3Expmap *>(_vertices[0]);
+        const g2o::SE3Quat &T(pose->estimate());
         Eigen::Vector3d xyz_trans = T.map(_point);
         double x = xyz_trans[0];
         double y = xyz_trans[1];
@@ -57,13 +60,13 @@ public:
         _jacobianOplusXi(2, 5) = -1;
     }
 
-    bool read(istream &in) {}
+    bool read(istream &in) override { return false; }
 
-    bool write(ostream &out) const {}
+    bool write(ostream &out) const override { return false; }
 };
 
 /**
- * 本程序演示了ICP求解相机位姿
+ * 本程序演示了ICP求解相机位姿以及BA优化
  * @param argc
  * @param argv
  * @return
@@ -114,6 +117,17 @@ int main(int argc, char **argv) {
 //    第一帧到第二帧
     cout << "R_inv = \n" << R.t() << endl;
     cout << "t_inv = \n" << -R.t() * t << endl;
+
+//    bundle adjustment
+    cout << "calling bundle adjustment" << endl;
+    bundleAdjustment(pts_1, pts_2, R, t);
+//    verify p1 = R*p2 + t
+    for (int i = 0; i < 5; i++) {
+        cout << "p1 = " << pts_1[i] << endl;
+        cout << "p2 = " << pts_2[i] << endl;
+        cout << "(R*p2+t) = \n" << R * (Mat_<double>(3, 1) << pts_2[i].x, pts_2[i].y, pts_2[i].z) + t << endl;
+        cout << endl;
+    }
     return 0;
 }
 
@@ -161,4 +175,51 @@ void pose_estimation_3d3d(const vector<Point3f> &pts_1, const vector<Point3f> &p
     R = (Mat_<double>(3, 3) << R_(0, 0), R_(0, 1), R_(0, 2), R_(1, 0), R_(1, 1), R_(1, 2), R_(2, 0), R_(2, 1), R_(2,
                                                                                                                   2));
     t = (Mat_<double>(3, 1) << t_(0, 0), t_(1, 0), t_(2, 0));
+}
+
+
+/**
+ * BA求解
+ * @param pts_1
+ * @param pts_2
+ * @param R
+ * @param t
+ */
+void bundleAdjustment(const vector<Point3f> &pts_1, const vector<Point3f> &pts_2, Mat &R, Mat &t) {
+//    初始化g2o,pose维度为6,landmark维度为3
+    typedef g2o::BlockSolver<g2o::BlockSolverTraits<6, 3>> Block;
+    Block::LinearSolverType *linearSolver = new g2o::LinearSolverEigen<Block::PoseMatrixType>();
+    auto *solver_ptr = new Block(linearSolver);
+    auto *solver = new g2o::OptimizationAlgorithmGaussNewton(solver_ptr);
+    g2o::SparseOptimizer optimizer;
+    optimizer.setAlgorithm(solver);
+
+//    vertex
+    auto *pose = new g2o::VertexSE3Expmap();
+    pose->setId(0);
+    pose->setEstimate(g2o::SE3Quat(Eigen::Matrix3d::Identity(), Eigen::Vector3d(0, 0, 0)));
+    optimizer.addVertex(pose);
+
+//    edges
+    int index = 1;
+    vector<EdgeProjectXYZRGBDPoseOnly *> edges;
+    for (size_t i = 0; i < pts_1.size(); i++) {
+        auto *edge = new EdgeProjectXYZRGBDPoseOnly(Eigen::Vector3d(pts_2[i].x, pts_2[i].y, pts_2[i].z));
+        edge->setId(index);
+        edge->setVertex(0, pose);
+        edge->setMeasurement(Eigen::Vector3d(pts_1[i].x, pts_1[i].y, pts_1[i].z));
+        edge->setInformation(Eigen::Matrix3d::Identity());
+        optimizer.addEdge(edge);
+        index++;
+        edges.push_back(edge);
+    }
+
+    auto t1 = chrono::steady_clock::now();
+    optimizer.setVerbose(true);
+    optimizer.initializeOptimization();
+    optimizer.optimize(100);
+    auto t2 = chrono::steady_clock::now();
+    auto time_used = chrono::duration_cast<chrono::duration<double >>(t2 - t1);
+    cout << "optimization costs time: " << time_used.count() << " seconds." << endl;
+    cout << "\nafter optimization:\n" << "T=\n" << Eigen::Isometry3d(pose->estimate()).matrix() << endl;
 }
