@@ -123,9 +123,9 @@ Point2d pixel2cam(const Point2d &p, const Mat &K) {
  */
 void triangulation(const vector<KeyPoint> &key_points_1, const vector<KeyPoint> &key_points_2,
                    const vector<DMatch> &matches, const Mat &R, const Mat &t, vector<Point3d> &points) {
-    Mat_<float> T1(3, 4);
+    Mat_<double> T1(3, 4);
     T1 << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0;
-    Mat_<float> T2(3, 4);
+    Mat_<double> T2(3, 4);
     T2 << R.at<double>(0, 0), R.at<double>(0, 1), R.at<double>(0, 2), t.at<double>(0, 0),
             R.at<double>(1, 0), R.at<double>(1, 1), R.at<double>(1, 2), t.at<double>(1, 0),
             R.at<double>(2, 0), R.at<double>(2, 1), R.at<double>(2, 2), t.at<double>(2, 0);
@@ -196,10 +196,10 @@ int main(int argc, char **argv) {
 //    验证对极约束
     for (DMatch m : matches) {
         Point2d pt1 = pixel2cam(key_points_1[m.queryIdx].pt, K);
-        Mat1d y1(3, 1);
+        Mat_<double> y1(3, 1);
         y1 << pt1.x, pt1.y, 1;
         Point2d pt2 = pixel2cam(key_points_2[m.trainIdx].pt, K);
-        Mat1d y2(3, 1);
+        Mat_<double> y2(3, 1);
         y2 << pt2.x, pt2.y, 1;
         Mat d = y2.t() * t_x * R * y1;
         cout << "epipolar constraint = " << d << endl;
@@ -212,7 +212,7 @@ int main(int argc, char **argv) {
         cout << "point in the first camera frame: " << pt1_cam << endl;
         cout << "point projected from 3D " << pt1_cam_3d << ", d=" << points[i].z << endl;
 //        第二幅图
-        Point2f pt2_cam = pixel2cam(key_points_2[matches[i].trainIdx].pt, K);
+        Point2d pt2_cam = pixel2cam(key_points_2[matches[i].trainIdx].pt, K);
         Mat pt2_trans = R * (Mat_<double>(3, 1) << points[i].x, points[i].y, points[i].z) + t;
         pt2_trans /= pt2_trans.at<double>(2, 0);
         cout << "point in the second camera frame: " << pt2_cam << endl;
