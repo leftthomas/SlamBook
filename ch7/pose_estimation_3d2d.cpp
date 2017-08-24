@@ -136,7 +136,7 @@ void bundleAdjustment(vector<Point3f> points_3d, vector<Point2f> points_2d,
     optimizer.setAlgorithm(solver);
 
 //    vertex
-    g2o::VertexSE3Expmap *pose = new g2o::VertexSE3Expmap();
+    auto *pose = new g2o::VertexSE3Expmap();
     Eigen::Matrix3d R_mat;
     R_mat << R.at<double>(0, 0), R.at<double>(0, 1), R.at<double>(0, 2),
             R.at<double>(1, 0), R.at<double>(1, 1), R.at<double>(1, 2),
@@ -146,8 +146,8 @@ void bundleAdjustment(vector<Point3f> points_3d, vector<Point2f> points_2d,
     optimizer.addVertex(pose);
 //    landmarks
     int index = 1;
-    for (const Point3f p:points_3d) {
-        g2o::VertexSBAPointXYZ *point = new g2o::VertexSBAPointXYZ();
+    for (const Point3f &p:points_3d) {
+        auto *point = new g2o::VertexSBAPointXYZ();
         point->setId(index++);
         point->setEstimate(Eigen::Vector3d(p.x, p.y, p.z));
         point->setMarginalized(true);
@@ -162,8 +162,8 @@ void bundleAdjustment(vector<Point3f> points_3d, vector<Point2f> points_2d,
 
 //    edges
     index = 1;
-    for (const Point2f p:points_2d) {
-        g2o::EdgeProjectXYZ2UV *edge = new g2o::EdgeProjectXYZ2UV();
+    for (const Point2f &p:points_2d) {
+        auto *edge = new g2o::EdgeProjectXYZ2UV();
         edge->setId(index);
         edge->setVertex(0, dynamic_cast<g2o::VertexSBAPointXYZ *>(optimizer.vertex(index)));
         edge->setVertex(1, pose);
@@ -174,12 +174,12 @@ void bundleAdjustment(vector<Point3f> points_3d, vector<Point2f> points_2d,
         index++;
     }
 
-    chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
+    auto t1 = chrono::steady_clock::now();
     optimizer.setVerbose(true);
     optimizer.initializeOptimization();
     optimizer.optimize(100);
-    chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
-    chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double >>(t2 - t1);
+    auto t2 = chrono::steady_clock::now();
+    auto time_used = chrono::duration_cast<chrono::duration<double >>(t2 - t1);
     cout << "optimization costs time: " << time_used.count() << " seconds." << endl;
     cout << "\nafter optimization:\n" << "T=\n" << Eigen::Isometry3d(pose->estimate()).matrix() << endl;
 }
