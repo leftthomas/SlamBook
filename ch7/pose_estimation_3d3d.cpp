@@ -5,11 +5,8 @@
 #include <opencv2/calib3d/calib3d.hpp>
 #include <Eigen/Core>
 #include <g2o/core/base_vertex.h>
-#include <g2o/core/base_unary_edge.h>
 #include <g2o/core/block_solver.h>
-#include <g2o/core/optimization_algorithm_levenberg.h>
-#include <g2o/solvers/csparse/linear_solver_csparse.h>
-#include <g2o/types/sba/types_six_dof_expmap.h>
+
 using namespace std;
 using namespace cv;
 
@@ -23,8 +20,6 @@ void find_feature_matches(
 // 像素坐标转相机归一化坐标
 Point2d pixel2cam(const Point2d &p, const Mat &K);
 
-// BA求解
-void bundleAdjustment(vector<Point3f> points_3d, vector<Point2f> points_2d, const Mat &K, Mat &R, Mat &t);
 
 /**
  * 本程序演示了PnP求解相机位姿,BA优化位姿与3D空间点坐标
@@ -34,8 +29,8 @@ void bundleAdjustment(vector<Point3f> points_3d, vector<Point2f> points_2d, cons
  */
 int main(int argc, char **argv) {
 
-    if (argc != 4) {
-        cout << "usage: pose_estimation_3d2d img1 img2 depth1" << endl;
+    if (argc != 5) {
+        cout << "usage: pose_estimation_3d3d img1 img2 depth1 depth2" << endl;
         return 1;
     }
     //-- 读取图像
@@ -73,8 +68,6 @@ int main(int argc, char **argv) {
     cv::Rodrigues(r, R);
     cout << "R=\n" << R << endl;
     cout << "t=\n" << t << endl;
-//    BA
-    bundleAdjustment(pts_3d, pts_2d, K, R, t);
     return 0;
 }
 
@@ -123,63 +116,4 @@ Point2d pixel2cam(const Point2d &p, const Mat &K) {
                     (p.x - K.at<double>(0, 2)) / K.at<double>(0, 0),
                     (p.y - K.at<double>(1, 2)) / K.at<double>(1, 1)
             );
-}
-
-void bundleAdjustment(vector<Point3f> points_3d, vector<Point2f> points_2d,
-                      const Mat &K, Mat &R, Mat &t) {
-//    初始化g2o,pose维度为6,landmark维度为3
-    typedef g2o::BlockSolver<g2o::BlockSolverTraits<6, 3>> Block;
-    Block::LinearSolverType *linearSolver = new g2o::LinearSolverCSparse<Block::PoseMatrixType>();
-    auto *solver_ptr = new Block(linearSolver);
-    auto *solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
-    g2o::SparseOptimizer optimizer;
-    optimizer.setAlgorithm(solver);
-
-//    vertex
-    auto *pose = new g2o::VertexSE3Expmap();
-    Eigen::Matrix3d R_mat;
-    R_mat << R.at<double>(0, 0), R.at<double>(0, 1), R.at<double>(0, 2),
-            R.at<double>(1, 0), R.at<double>(1, 1), R.at<double>(1, 2),
-            R.at<double>(2, 0), R.at<double>(2, 1), R.at<double>(2, 2);
-    pose->setId(0);
-    pose->setEstimate(g2o::SE3Quat(R_mat, Eigen::Vector3d(t.at<double>(0, 0), t.at<double>(1, 0), t.at<double>(2, 0))));
-    optimizer.addVertex(pose);
-//    landmarks
-    int index = 1;
-    for (const Point3f &p:points_3d) {
-        auto *point = new g2o::VertexSBAPointXYZ();
-        point->setId(index++);
-        point->setEstimate(Eigen::Vector3d(p.x, p.y, p.z));
-        point->setMarginalized(true);
-        optimizer.addVertex(point);
-    }
-
-//    parameter: camera intrinsics
-    g2o::CameraParameters *camera = new g2o::CameraParameters(
-            K.at<double>(0, 0), Eigen::Vector2d(K.at<double>(0, 2), K.at<double>(1, 2)), 0);
-    camera->setId(0);
-    optimizer.addParameter(camera);
-
-//    edges
-    index = 1;
-    for (const Point2f &p:points_2d) {
-        auto *edge = new g2o::EdgeProjectXYZ2UV();
-        edge->setId(index);
-        edge->setVertex(0, dynamic_cast<g2o::VertexSBAPointXYZ *>(optimizer.vertex(index)));
-        edge->setVertex(1, pose);
-        edge->setMeasurement(Eigen::Vector2d(p.x, p.y));
-        edge->setParameterId(0, 0);
-        edge->setInformation(Eigen::Matrix2d::Identity());
-        optimizer.addEdge(edge);
-        index++;
-    }
-
-    auto t1 = chrono::steady_clock::now();
-    optimizer.setVerbose(true);
-    optimizer.initializeOptimization();
-    optimizer.optimize(100);
-    auto t2 = chrono::steady_clock::now();
-    auto time_used = chrono::duration_cast<chrono::duration<double >>(t2 - t1);
-    cout << "optimization costs time: " << time_used.count() << " seconds." << endl;
-    cout << "\nafter optimization:\n" << "T=\n" << Eigen::Isometry3d(pose->estimate()).matrix() << endl;
 }
