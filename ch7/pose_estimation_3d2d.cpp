@@ -48,9 +48,9 @@ int main(int argc, char **argv) {
         [int(key_points_1[match.queryIdx].pt.x)];
         if (d == 0)
             continue;
-        float dd = d / 1000.0;
+        double dd = d / 1000.0;
         Point2d p1 = pixel2cam(key_points_1[match.queryIdx].pt, K);
-        pts_3d.push_back(Point3f(p1.x * dd, p1.y * dd, dd));
+        pts_3d.push_back(Point3d(p1.x * dd, p1.y * dd, dd));
         pts_2d.push_back(key_points_2[match.trainIdx].pt);
     }
     cout << "3d-2d pairs: " << pts_3d.size() << endl;
