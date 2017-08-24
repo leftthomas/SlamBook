@@ -12,6 +12,7 @@
 // BA求解
 void bundleAdjustment(vector<Point3f> points_3d, vector<Point2f> points_2d, const Mat &K, Mat &R, Mat &t);
 
+
 /**
  * 本程序演示了PnP求解相机位姿,BA优化位姿与3D空间点坐标
  * @param argc
