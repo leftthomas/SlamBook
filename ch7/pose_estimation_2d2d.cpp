@@ -5,48 +5,9 @@
 void pose_estimation_2d2d(vector<KeyPoint> key_points_1, vector<KeyPoint> key_points_2,
                           vector<DMatch> matches, Mat &R, Mat &t);
 
-
-
-/**
- * 三角测量
- * @param key_points_1
- * @param key_points_2
- * @param matches
- * @param R
- * @param t
- * @param points
- */
+// 三角测量
 void triangulation(const vector<KeyPoint> &key_points_1, const vector<KeyPoint> &key_points_2,
-                   const vector<DMatch> &matches, const Mat &R, const Mat &t, vector<Point3d> &points) {
-    Mat_<double> T1(3, 4);
-    T1 << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0;
-    Mat_<double> T2(3, 4);
-    T2 << R.at<double>(0, 0), R.at<double>(0, 1), R.at<double>(0, 2), t.at<double>(0, 0),
-            R.at<double>(1, 0), R.at<double>(1, 1), R.at<double>(1, 2), t.at<double>(1, 0),
-            R.at<double>(2, 0), R.at<double>(2, 1), R.at<double>(2, 2), t.at<double>(2, 0);
-
-//        将像素坐标转换为相机坐标
-    Mat_<double> K(3, 3);
-    K << 520.9, 0, 325.1, 0, 521.0, 249.7, 0, 0, 1;
-    vector<Point2d> pts_1, pts_2;
-    for (DMatch m : matches) {
-        pts_1.push_back(pixel2cam(key_points_1[m.queryIdx].pt, K));
-        pts_2.push_back(pixel2cam(key_points_2[m.trainIdx].pt, K));
-    }
-
-//    三角测量
-    Mat pts_4d;
-    triangulatePoints(T1, T2, pts_1, pts_2, pts_4d);
-
-//    转换成非齐次坐标
-    for (int i = 0; i < pts_4d.cols; ++i) {
-        Mat x = pts_4d.col(i);
-//        归一化
-        x /= x.at<double>(3, 0);
-        Point3d p(x.at<double>(0, 0), x.at<double>(1, 0), x.at<double>(2, 0));
-        points.push_back(p);
-    }
-}
+                   const vector<DMatch> &matches, const Mat &R, const Mat &t, vector<Point3d> &points);
 
 
 /**
@@ -160,4 +121,47 @@ void pose_estimation_2d2d(vector<KeyPoint> key_points_1, vector<KeyPoint> key_po
     recoverPose(essential_matrix, points_1, points_2, R, t, focal_length, principal_point);
     cout << "R is \n" << R << endl;
     cout << "t is \n" << t << endl;
+}
+
+
+/**
+ * 三角测量
+ * @param key_points_1
+ * @param key_points_2
+ * @param matches
+ * @param R
+ * @param t
+ * @param points
+ */
+void
+triangulation(const vector<KeyPoint> &key_points_1, const vector<KeyPoint> &key_points_2, const vector<DMatch> &matches,
+              const Mat &R, const Mat &t, vector<Point3d> &points) {
+    Mat_<double> T1(3, 4);
+    T1 << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0;
+    Mat_<double> T2(3, 4);
+    T2 << R.at<double>(0, 0), R.at<double>(0, 1), R.at<double>(0, 2), t.at<double>(0, 0),
+            R.at<double>(1, 0), R.at<double>(1, 1), R.at<double>(1, 2), t.at<double>(1, 0),
+            R.at<double>(2, 0), R.at<double>(2, 1), R.at<double>(2, 2), t.at<double>(2, 0);
+
+//        将像素坐标转换为相机坐标
+    Mat_<double> K(3, 3);
+    K << 520.9, 0, 325.1, 0, 521.0, 249.7, 0, 0, 1;
+    vector<Point2d> pts_1, pts_2;
+    for (DMatch m : matches) {
+        pts_1.push_back(pixel2cam(key_points_1[m.queryIdx].pt, K));
+        pts_2.push_back(pixel2cam(key_points_2[m.trainIdx].pt, K));
+    }
+
+//    三角测量
+    Mat pts_4d;
+    triangulatePoints(T1, T2, pts_1, pts_2, pts_4d);
+
+//    转换成非齐次坐标
+    for (int i = 0; i < pts_4d.cols; ++i) {
+        Mat x = pts_4d.col(i);
+//        归一化
+        x /= x.at<double>(3, 0);
+        Point3d p(x.at<double>(0, 0), x.at<double>(1, 0), x.at<double>(2, 0));
+        points.push_back(p);
+    }
 };
