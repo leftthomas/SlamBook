@@ -19,20 +19,21 @@ void find_feature_matches(const Mat &img_1, const Mat &img_2, vector<KeyPoint> &
                           vector<KeyPoint> &key_points_2, vector<DMatch> &matches) {
 
     Mat descriptors_1, descriptors_2;
-    Ptr<ORB> orb = ORB::create();
+    Ptr<FeatureDetector> detector = ORB::create();
+    Ptr<DescriptorExtractor> descriptor = ORB::create();
+    Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create("BruteForce-Hamming");
 
 //    第一步：检测 oriented FAST角点位置
-    orb->detect(img_1, key_points_1);
-    orb->detect(img_2, key_points_2);
+    detector->detect(img_1, key_points_1);
+    detector->detect(img_2, key_points_2);
 
 //    第二步：计算BRIEF描述子
-    orb->compute(img_1, key_points_1, descriptors_1);
-    orb->compute(img_2, key_points_2, descriptors_2);
+    descriptor->compute(img_1, key_points_1, descriptors_1);
+    descriptor->compute(img_2, key_points_2, descriptors_2);
 
 //    第三步：匹配描述子，使用Hamming距离
     vector<DMatch> match;
-    BFMatcher matcher(NORM_HAMMING);
-    matcher.match(descriptors_1, descriptors_2, match, noArray());
+    matcher->match(descriptors_1, descriptors_2, match, noArray());
 
 //    第四步：匹配点对筛选,找出最相似的和最不相似的两组点之间的距离
     double min_dist = 10000, max_dist = 0;
@@ -81,12 +82,12 @@ void pose_estimation_2d2d(vector<KeyPoint> key_points_1, vector<KeyPoint> key_po
 //    焦距,TUM dataset标定值
     int focal_length = 521;
     Mat essential_matrix;
-    essential_matrix = findEssentialMat(points_1, points_2, focal_length, principal_point);
+    essential_matrix = findEssentialMat(points_1, points_2, focal_length, principal_point, RANSAC);
     cout << "essential matrix is \n" << essential_matrix << endl;
 
 //    计算单应矩阵
     Mat homography_matrix;
-    homography_matrix = findHomography(points_1, points_2, RANSAC);
+    homography_matrix = findHomography(points_1, points_2, RANSAC, 3, noArray(), 2000, 0.99);
     cout << "homography matrix is \n" << homography_matrix << endl;
 
 //    从本质矩阵中恢复旋转和平移
@@ -181,7 +182,7 @@ int main(int argc, char **argv) {
     pose_estimation_2d2d(key_points_1, key_points_2, matches, R, t);
 
 //    验证E=t^R*scale
-    Mat1d t_x(3, 3);
+    Mat_<double> t_x(3, 3);
     t_x << 0, -t.at<double>(2, 0), t.at<double>(1, 0), t.at<double>(2, 0), 0, -t.at<double>(0, 0),
             -t.at<double>(1, 0), t.at<double>(0, 0), 0;
     cout << "t^R=\n" << t_x * R << endl;
