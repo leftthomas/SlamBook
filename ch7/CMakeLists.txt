@@ -12,4 +12,5 @@ target_link_libraries(feature_extraction ${OpenCV_LIBRARIES})
 add_executable(pose_estimation_2d2d pose_estimation_2d2d.cpp)
 target_link_libraries(pose_estimation_2d2d ${OpenCV_LIBRARIES})
 
-
+add_executable(pose_estimation_3d2d pose_estimation_3d2d.cpp)
+target_link_libraries(pose_estimation_3d2d ${OpenCV_LIBRARIES})
