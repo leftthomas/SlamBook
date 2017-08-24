@@ -2,7 +2,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/highgui/highgui.hpp>
-
+#include <opencv2/calib3d/calib3d.hpp>
 using namespace std;
 using namespace cv;
 
@@ -36,9 +36,33 @@ int main(int argc, char **argv) {
     vector<DMatch> matches;
     find_feature_matches(img_1, img_2, key_points_1, key_points_2, matches);
     cout << "一共找到" << matches.size() << "组匹配点" << endl;
+
 //    建立3D点,深度图为16位无符号,单通道
     Mat d1 = imread(argv[3], CV_LOAD_IMAGE_UNCHANGED);
+    Mat_<double> K(3, 3);
+    K << 520.9, 0, 325.1, 0, 521.0, 249.7, 0, 0, 1;
+    vector<Point3f> pts_3d;
+    vector<Point2f> pts_2d;
+    for (auto &match : matches) {
+        ushort d = d1.ptr<unsigned short>(int(key_points_1[match.queryIdx].pt.y))
+        [int(key_points_1[match.queryIdx].pt.x)];
+        if (d == 0)
+            continue;
+        float dd = d / 1000.0;
+        Point2d p1 = pixel2cam(key_points_1[match.queryIdx].pt, K);
+        pts_3d.push_back(Point3f(p1.x * dd, p1.y * dd, dd));
+        pts_2d.push_back(key_points_2[match.trainIdx].pt);
+    }
+    cout << "3d-2d pairs: " << pts_3d.size() << endl;
 
+    Mat r, t;
+//    调用OpenCV的PnP求解
+    solvePnP(pts_3d, pts_2d, K, Mat(), r, t, false, cv::SOLVEPNP_EPNP);
+    Mat R;
+//    通过罗德里格斯公式将旋转向量转为旋转矩阵
+    cv::Rodrigues(r, R);
+    cout << "R=\n" << R << endl;
+    cout << "t=\n" << t << endl;
     return 0;
 }
 
