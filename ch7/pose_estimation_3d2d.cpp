@@ -3,6 +3,12 @@
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
+#include <Eigen/Core>
+#include <g2o/core/base_vertex.h>
+#include <g2o/core/base_unary_edge.h>
+#include <g2o/core/block_solver.h>
+#include <g2o/core/optimization_algorithm_levenberg.h>
+#include <g2o/solvers/csparse/linear_solver_csparse.h>
 using namespace std;
 using namespace cv;
 
@@ -16,8 +22,11 @@ void find_feature_matches(
 // 像素坐标转相机归一化坐标
 Point2d pixel2cam(const Point2d &p, const Mat &K);
 
+// BA求解
+void bundleAdjustment(const vector<Point3f> points_3d, const vector<Point2f> points_2d, const Mat &K, Mat &R, Mat &t);
+
 /**
- * 本程序演示了PnP求解相机位姿
+ * 本程序演示了PnP求解相机位姿,BA优化位姿与3D空间点坐标
  * @param argc
  * @param argv
  * @return
@@ -111,4 +120,16 @@ Point2d pixel2cam(const Point2d &p, const Mat &K) {
                     (p.x - K.at<double>(0, 2)) / K.at<double>(0, 0),
                     (p.y - K.at<double>(1, 2)) / K.at<double>(1, 1)
             );
+}
+
+void bundleAdjustment(const vector<Point3f> points_3d, const vector<Point2f> points_2d,
+                      const Mat &K, Mat &R, Mat &t) {
+//    初始化g2o,pose维度为6,landmark维度为3
+    typedef g2o::BlockSolver<g2o::BlockSolverTraits<6, 3>> Block;
+    Block::LinearSolverType *linearSolver = new g2o::LinearSolverCSparse<Block::PoseMatrixType>();
+    Block *solver_ptr = new Block(linearSolver);
+    g2o::OptimizationAlgorithmLevenberg *solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+    g2o::SparseOptimizer optimizer;
+    optimizer.setAlgorithm(solver);
+
 }
