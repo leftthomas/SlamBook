@@ -48,30 +48,35 @@ int main(int argc, char **argv) {
 
 //    建立3D点,深度图为16位无符号,单通道
     Mat d1 = imread(argv[3], CV_LOAD_IMAGE_UNCHANGED);
+    Mat d2 = imread(argv[4], CV_LOAD_IMAGE_UNCHANGED);
     Mat_<double> K(3, 3);
     K << 520.9, 0, 325.1, 0, 521.0, 249.7, 0, 0, 1;
-    vector<Point3f> pts_3d;
-    vector<Point2f> pts_2d;
+    vector<Point3f> pts_1, pts_2;
     for (auto &match : matches) {
-        ushort d = d1.ptr<unsigned short>(int(key_points_1[match.queryIdx].pt.y))
+        ushort d_1 = d1.ptr<unsigned short>(int(key_points_1[match.queryIdx].pt.y))
         [int(key_points_1[match.queryIdx].pt.x)];
-        if (d == 0)
+        ushort d_2 = d2.ptr<unsigned short>(int(key_points_2[match.trainIdx].pt.y))
+        [int(key_points_2[match.trainIdx].pt.x)];
+        if (d_1 == 0 || d_2 == 0)
             continue;
-        double dd = d / 1000.0;
+        double dd_1 = d_1 / 1000.0, dd_2 = d_2 / 1000.0;
         Point2d p1 = pixel2cam(key_points_1[match.queryIdx].pt, K);
-        pts_3d.push_back(Point3d(p1.x * dd, p1.y * dd, dd));
-        pts_2d.push_back(key_points_2[match.trainIdx].pt);
+        Point2d p2 = pixel2cam(key_points_2[match.trainIdx].pt, K);
+        pts_1.push_back(Point3d(p1.x * dd_1, p1.y * dd_1, dd_1));
+        pts_2.push_back(Point3d(p2.x * dd_2, p2.y * dd_2, dd_2));
     }
-    cout << "3d-2d pairs: " << pts_3d.size() << endl;
+    cout << "3d-3d pairs: " << pts_1.size() << endl;
 
-    Mat r, t;
-//    调用OpenCV的PnP求解
-    solvePnP(pts_3d, pts_2d, K, Mat(), r, t, false, cv::SOLVEPNP_EPNP);
-    Mat R;
-//    通过罗德里格斯公式将旋转向量转为旋转矩阵
-    cv::Rodrigues(r, R);
+    Mat R, t;
+//    SVD求解
+    pose_estimation_3d3d(pts_1, pts_2, R, t);
+    cout << "ICP via SVD results: " << endl;
+//    第二帧到第一帧
     cout << "R=\n" << R << endl;
     cout << "t=\n" << t << endl;
+//    第一帧到第二帧
+    cout << "R_inv = \n" << R.t() << endl;
+    cout << "t_inv = \n" << -R.t() * t << endl;
     return 0;
 }
 
@@ -125,7 +130,7 @@ Point2d pixel2cam(const Point2d &p, const Mat &K) {
 void pose_estimation_3d3d(const vector<Point3f> &pts_1, const vector<Point3f> &pts_2, Mat &R, Mat &t) {
 //    质心
     Point3f p_1, p_2;
-    auto N = pts_1.size();
+    int N = pts_1.size();
     for (int i = 0; i < N; ++i) {
         p_1 += pts_1[i];
         p_2 += pts_2[i];
@@ -152,11 +157,10 @@ void pose_estimation_3d3d(const vector<Point3f> &pts_1, const vector<Point3f> &p
     cout << "U=\n" << U << endl;
     cout << "V=\n" << V << endl;
 //    求R和t
-    Eigen::Matrix3d R_ = U * V.transpose();
+    Eigen::Matrix3d R_ = U * (V.transpose());
     Eigen::Vector3d t_ = Eigen::Vector3d(p_1.x, p_1.y, p_1.z) - R_ * Eigen::Vector3d(p_2.x, p_2.y, p_2.z);
 //    转成cv::Mat
-    R = Mat_<double>(3, 3);
-    R << R_(0, 0), R_(0, 1), R_(0, 2), R_(1, 0), R_(1, 1), R_(1, 2), R_(2, 0), R_(2, 1), R_(2, 2);
-    t = Mat_<double>(3, 1);
-    t << t_(0, 0), t_(1, 0), t_(2, 0);
+    R = (Mat_<double>(3, 3) << R_(0, 0), R_(0, 1), R_(0, 2), R_(1, 0), R_(1, 1), R_(1, 2), R_(2, 0), R_(2, 1), R_(2,
+                                                                                                                  2));
+    t = (Mat_<double>(3, 1) << t_(0, 0), t_(1, 0), t_(2, 0));
 }
