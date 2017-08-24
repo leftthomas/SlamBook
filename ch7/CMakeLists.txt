@@ -9,7 +9,7 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 add_executable(feature_extraction feature_extraction.cpp)
 target_link_libraries(feature_extraction ${OpenCV_LIBRARIES})
 
-add_executable(pose_estimation_2d2d pose_estimation_2d2d.cpp)
+add_executable(pose_estimation_2d2d pose_estimation_2d2d.cpp common.h)
 target_link_libraries(pose_estimation_2d2d ${OpenCV_LIBRARIES})
 
 # 添加cmake模块以使用g2o、CSparse库
