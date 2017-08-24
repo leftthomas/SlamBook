@@ -30,10 +30,10 @@ include_directories(/usr/local/Cellar/eigen/3.3.4/include/eigen3)
 find_package(CSparse REQUIRED)
 include_directories(${CSPARSE_INCLUDE_DIR})
 
-add_executable(pose_estimation_3d2d pose_estimation_3d2d.cpp)
+add_executable(pose_estimation_3d2d pose_estimation_3d2d.cpp common.h)
 target_link_libraries(pose_estimation_3d2d ${OpenCV_LIBRARIES} ${CSPARSE_LIBRARY}
         g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension)
 
-add_executable(pose_estimation_3d3d pose_estimation_3d3d.cpp)
+add_executable(pose_estimation_3d3d pose_estimation_3d3d.cpp common.h)
 target_link_libraries(pose_estimation_3d3d ${OpenCV_LIBRARIES} ${CSPARSE_LIBRARY}
         g2o_core g2o_stuff g2o_types_sba g2o_csparse_extension)
