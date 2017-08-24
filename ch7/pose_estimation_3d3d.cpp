@@ -4,8 +4,10 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 #include <g2o/core/base_vertex.h>
 #include <g2o/core/block_solver.h>
+#include <g2o/solvers/eigen/linear_solver_eigen.h>
 
 using namespace std;
 using namespace cv;
@@ -20,9 +22,11 @@ void find_feature_matches(
 // 像素坐标转相机归一化坐标
 Point2d pixel2cam(const Point2d &p, const Mat &K);
 
+// ICP姿态评估
+void pose_estimation_3d3d(const vector<Point3f> &pts_1, const vector<Point3f> &pts_2, Mat &R, Mat &t);
 
 /**
- * 本程序演示了PnP求解相机位姿,BA优化位姿与3D空间点坐标
+ * 本程序演示了ICP求解相机位姿
  * @param argc
  * @param argv
  * @return
@@ -116,4 +120,43 @@ Point2d pixel2cam(const Point2d &p, const Mat &K) {
                     (p.x - K.at<double>(0, 2)) / K.at<double>(0, 0),
                     (p.y - K.at<double>(1, 2)) / K.at<double>(1, 1)
             );
+}
+
+void pose_estimation_3d3d(const vector<Point3f> &pts_1, const vector<Point3f> &pts_2, Mat &R, Mat &t) {
+//    质心
+    Point3f p_1, p_2;
+    auto N = pts_1.size();
+    for (int i = 0; i < N; ++i) {
+        p_1 += pts_1[i];
+        p_2 += pts_2[i];
+    }
+    p_1 /= N;
+    p_2 /= N;
+//    去质心坐标
+    vector<Point3f> q_1(N), q_2(N);
+    for (int j = 0; j < N; ++j) {
+        q_1[j] = pts_1[j] - p_1;
+        q_2[j] = pts_2[j] - p_2;
+    }
+//    计算W=q_1*q_2^T
+    Eigen::Matrix3d W = Eigen::Matrix3d::Zero();
+    for (int i = 0; i < N; ++i) {
+        W += Eigen::Vector3d(q_1[i].x, q_1[i].y, q_1[i].z) *
+             Eigen::Vector3d(q_2[i].x, q_2[i].y, q_2[i].z).transpose();
+    }
+    cout << "W=\n" << W << endl;
+//    对W进行SVD分解
+    Eigen::JacobiSVD<Eigen::Matrix3d> svd(W, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    Eigen::Matrix3d U = svd.matrixU();
+    Eigen::Matrix3d V = svd.matrixV();
+    cout << "U=\n" << U << endl;
+    cout << "V=\n" << V << endl;
+//    求R和t
+    Eigen::Matrix3d R_ = U * V.transpose();
+    Eigen::Vector3d t_ = Eigen::Vector3d(p_1.x, p_1.y, p_1.z) - R_ * Eigen::Vector3d(p_2.x, p_2.y, p_2.z);
+//    转成cv::Mat
+    R = Mat_<double>(3, 3);
+    R << R_(0, 0), R_(0, 1), R_(0, 2), R_(1, 0), R_(1, 1), R_(1, 2), R_(2, 0), R_(2, 1), R_(2, 2);
+    t = Mat_<double>(3, 1);
+    t << t_(0, 0), t_(1, 0), t_(2, 0);
 }
