@@ -130,8 +130,9 @@ protected:
         );
     }
 };
+
 /**
- * 本程序演示了稀疏直接法
+ * 本程序演示了半稠密直接法
  * @param argc
  * @param argv
  * @return
