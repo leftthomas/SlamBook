@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
 
     list<cv::Point2f> key_points;
     cv::Mat color, depth, last_color;
+//    573为associate.txt文件行数
     for (int index = 0; index < 573; ++index) {
         fin >> time_rgb >> rgb_file >> time_depth >> depth_file;
         color = cv::imread(data_set_path + "/" + rgb_file);
