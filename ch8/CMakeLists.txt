@@ -24,8 +24,7 @@ link_directories(${LINK_DIR})
 include_directories(/usr/local/Cellar/eigen/3.3.4/include/eigen3)
 
 add_executable(direct_sparse direct_sparse.cpp)
-target_link_libraries(direct_sparse ${OpenCV_LIBRARIES} g2o_core g2o_stuff
-        g2o_types_sba g2o_solver_csparse g2o_csparse_extension)
+target_link_libraries(direct_sparse ${OpenCV_LIBRARIES} g2o_core g2o_stuff g2o_types_sba)
 
 
 
