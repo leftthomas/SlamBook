@@ -10,6 +10,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/video/tracking.hpp>
+
 using namespace std;
 using namespace g2o;
 
@@ -24,13 +25,13 @@ public:
 //    参考帧
     cv::Mat *image_ = nullptr;
 
-    EdgeSE3ProjectDirect() {}
+    EdgeSE3ProjectDirect() = default;
 
     EdgeSE3ProjectDirect(Eigen::Vector3d point, float fx, float fy, float cx, float cy, cv::Mat *image) :
-            x_world_(point), fx_(fx), fy_(fy), cx_(cx), cy_(cy), image_(image) {}
+            x_world_(std::move(point)), fx_(fx), fy_(fy), cx_(cx), cy_(cy), image_(image) {}
 
     void computeError() override {
-        const auto *v = static_cast<const VertexSE3Expmap *>(_vertices[0]);
+        const VertexSE3Expmap *v = static_cast<const VertexSE3Expmap *>(_vertices[0]);
         Eigen::Vector3d x_local = v->estimate().map(x_world_);
         float x = x_local[0] * fx_ / x_local[2] + cx_;
         float y = x_local[1] * fy_ / x_local[2] + cy_;
@@ -39,44 +40,65 @@ public:
             _error(0, 0) = 0.0;
             this->setLevel(1);
         } else {
-            _error(0, 0) = getPoxelValue(x, y) - _measurement;
+            _error(0, 0) = getPixelValue(x, y) - _measurement;
         }
 
     }
 
     void linearizeOplus() override {
-        auto *pose = static_cast<VertexSE3Expmap *>(_vertices[0]);
-        const SE3Quat &T(pose->estimate());
-        Eigen::Vector3d xyz_trans = T.map(x_world_);
+
+        if (level() == 1) {
+            _jacobianOplusXi = Eigen::Matrix<double, 1, 6>::Zero();
+            return;
+        }
+
+        auto *vtx = static_cast<VertexSE3Expmap *>(_vertices[0]);
+        Eigen::Vector3d xyz_trans = vtx->estimate().map(x_world_);
         double x = xyz_trans[0];
         double y = xyz_trans[1];
-        double z = xyz_trans[2];
+        double invz = 1.0 / xyz_trans[2];
+        double invz_2 = invz * invz;
+        float u = x * fx_ * invz + cx_;
+        float v = y * fy_ * invz + cy_;
 
-        _jacobianOplusXi(0, 0) = 0;
-        _jacobianOplusXi(0, 1) = -z;
-        _jacobianOplusXi(0, 2) = y;
-        _jacobianOplusXi(0, 3) = -1;
-        _jacobianOplusXi(0, 4) = 0;
-        _jacobianOplusXi(0, 5) = 0;
+        Eigen::Matrix<double, 2, 6> jacobian_uv_ksai;
 
-        _jacobianOplusXi(1, 0) = z;
-        _jacobianOplusXi(1, 1) = 0;
-        _jacobianOplusXi(1, 2) = -x;
-        _jacobianOplusXi(1, 3) = 0;
-        _jacobianOplusXi(1, 4) = -1;
-        _jacobianOplusXi(1, 5) = 0;
+        jacobian_uv_ksai(0, 0) = -x * y * invz_2 * fx_;
+        jacobian_uv_ksai(0, 1) = (1 + (x * x * invz_2)) * fx_;
+        jacobian_uv_ksai(0, 2) = -y * invz * fx_;
+        jacobian_uv_ksai(0, 3) = invz * fx_;
+        jacobian_uv_ksai(0, 4) = 0;
+        jacobian_uv_ksai(0, 5) = -x * invz_2 * fx_;
 
-        _jacobianOplusXi(2, 0) = -y;
-        _jacobianOplusXi(2, 1) = x;
-        _jacobianOplusXi(2, 2) = 0;
-        _jacobianOplusXi(2, 3) = 0;
-        _jacobianOplusXi(2, 4) = 0;
-        _jacobianOplusXi(2, 5) = -1;
+        jacobian_uv_ksai(1, 0) = -(1 + y * y * invz_2) * fy_;
+        jacobian_uv_ksai(1, 1) = x * y * invz_2 * fy_;
+        jacobian_uv_ksai(1, 2) = x * invz * fy_;
+        jacobian_uv_ksai(1, 3) = 0;
+        jacobian_uv_ksai(1, 4) = invz * fy_;
+        jacobian_uv_ksai(1, 5) = -y * invz_2 * fy_;
+
+        Eigen::Matrix<double, 1, 2> jacobian_pixel_uv;
+
+        jacobian_pixel_uv(0, 0) = (getPixelValue(u + 1, v) - getPixelValue(u - 1, v)) / 2;
+        jacobian_pixel_uv(0, 1) = (getPixelValue(u, v + 1) - getPixelValue(u, v - 1)) / 2;
+
+        _jacobianOplusXi = jacobian_pixel_uv * jacobian_uv_ksai;
     }
 
     bool read(istream &in) override { return false; }
 
     bool write(ostream &out) const override { return false; }
+
+protected:
+//    双线性插值获取像素灰度值
+    inline float getPixelValue(float x, float y) {
+        uchar *data = &image_->data[int(y) * image_->step + int(x)];
+        float xx = x - floor(x);
+        float yy = y - floor(y);
+        return float((1 - xx) * (1 - yy) * data[0] + xx * (1 - yy) * data[1] +
+                     (1 - xx) * yy * data[image_->step] + xx * yy * data[image_->step + 1]
+        );
+    }
 };
 /**
  * 本程序演示了稀疏直接法
