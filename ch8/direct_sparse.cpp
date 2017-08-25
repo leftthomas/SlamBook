@@ -70,9 +70,9 @@ int main(int argc, char **argv) {
         cout << "Tcw=" << Tcw.matrix() << endl;
 
         // plot the feature points
-        cv::Mat img_show(color.rows * 2, color.cols, CV_8UC3);
+        cv::Mat img_show(color.rows, color.cols * 2, CV_8UC3);
         prev_color.copyTo(img_show(cv::Rect(0, 0, color.cols, color.rows)));
-        color.copyTo(img_show(cv::Rect(0, color.rows, color.cols, color.rows)));
+        color.copyTo(img_show(cv::Rect(color.cols, 0, color.cols, color.rows)));
         for (Measurement m:measurements) {
             if (rand() > RAND_MAX / 5)
                 continue;
@@ -88,9 +88,9 @@ int main(int argc, char **argv) {
             float g = 255 * float(rand()) / RAND_MAX;
             float r = 255 * float(rand()) / RAND_MAX;
             cv::circle(img_show, cv::Point2d(pixel_prev(0, 0), pixel_prev(1, 0)), 8, cv::Scalar(b, g, r), 2);
-            cv::circle(img_show, cv::Point2d(pixel_now(0, 0), pixel_now(1, 0) + color.rows), 8, cv::Scalar(b, g, r), 2);
+            cv::circle(img_show, cv::Point2d(pixel_now(0, 0) + color.cols, pixel_now(1, 0)), 8, cv::Scalar(b, g, r), 2);
             cv::line(img_show, cv::Point2d(pixel_prev(0, 0), pixel_prev(1, 0)),
-                     cv::Point2d(pixel_now(0, 0), pixel_now(1, 0) + color.rows), cv::Scalar(b, g, r), 1);
+                     cv::Point2d(pixel_now(0, 0) + color.cols, pixel_now(1, 0)), cv::Scalar(b, g, r), 1);
         }
         cv::imshow("result", img_show);
         cv::waitKey(0);
