@@ -32,13 +32,59 @@ int main(int argc, char **argv) {
 
     list<cv::Point2f> key_points;
     cv::Mat color, depth, last_color;
-    for (int index = 0; index < 100; ++index) {
+    for (int index = 0; index < 573; ++index) {
         fin >> time_rgb >> rgb_file >> time_depth >> depth_file;
-        color = cv::imread(string.append(data_set_path + "/" + rgb_file));
-        depth = cv::imread(string.append(data_set_path + "/" + depth_file), -1);
+        color = cv::imread(data_set_path + "/" + rgb_file);
+        depth = cv::imread(data_set_path + "/" + depth_file, -1);
         if (index == 0) {
-
+//            对第一帧提取FAST特征点
+            vector<cv::KeyPoint> kps;
+            cv::Ptr<cv::FastFeatureDetector> detector = cv::FastFeatureDetector::create();
+            detector->detect(color, kps);
+            for (auto kp:kps) {
+                key_points.push_back(kp.pt);
+            }
+            last_color = color;
+            continue;
         }
+        if (color.data == nullptr || depth.data == nullptr)
+            continue;
+//        对其他帧用LK跟踪特征点
+        vector<cv::Point2f> next_key_points;
+        vector<cv::Point2f> prev_key_points;
+        for (const auto &kp:key_points) {
+            prev_key_points.push_back(kp);
+        }
+        vector<unsigned char> status;
+        vector<float> error;
+        chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
+        cv::calcOpticalFlowPyrLK(last_color, color, prev_key_points, next_key_points, status, error);
+        chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
+        auto time_used = chrono::duration_cast<chrono::duration<double >>(t2 - t1);
+        cout << index << "--LK Flow costs time: " << time_used.count() << " seconds." << endl;
+//        删掉跟丢的点
+        int i = 0;
+        for (auto iter = key_points.begin(); iter != key_points.end(); i++) {
+            if (status[i] == 0) {
+                iter = key_points.erase(iter);
+                continue;
+            }
+            *iter = next_key_points[i];
+            iter++;
+        }
+        cout << "tracked key points: " << key_points.size() << endl;
+        if (key_points.empty()) {
+            cout << "all key points are lost." << endl;
+            break;
+        }
+//        画出key points
+        cv::Mat img_show = color.clone();
+        for (const auto &kp:key_points) {
+            cv::circle(img_show, kp, 10, cv::Scalar(0, 240, 0), 1);
+        }
+        cv::imshow("corners", img_show);
+        cv::waitKey(0);
+        last_color = color;
     }
     return 0;
 }
