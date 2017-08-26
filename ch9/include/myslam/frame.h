@@ -25,8 +25,8 @@ public:
 
     Frame();
 
-    Frame(unsigned long id_, double time_stamp_, const SE3 &T_c_w, const Ptr &camera_,
-          const Mat &color_, const Mat &depth_);
+    Frame(unsigned long id_, double time_stamp_ = 0, const SE3 &T_c_w = SE3(), const Camera::Ptr &camera_ =
+    nullptr, const Mat &color_ = Mat(), const Mat &depth_ = Mat());
 
     virtual ~Frame();
 
