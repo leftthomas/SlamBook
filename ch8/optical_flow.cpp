@@ -23,7 +23,7 @@ using namespace std;
 int main(int argc, char **argv) {
 
     if (argc != 2) {
-        cout << "usage: lkFlow data_set_path" << endl;
+        cout << "usage: optical_flow data_set_path" << endl;
         return 1;
     }
     string data_set_path = argv[1];

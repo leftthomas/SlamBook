@@ -1,5 +1,6 @@
 #include <fstream>
 #include "common.h"
+#include <string>
 
 /**
  * 本程序演示了半稠密直接法
@@ -100,6 +101,11 @@ int main(int argc, char **argv) {
             cv::circle(img_show, cv::Point2d(pixel_now(0, 0), pixel_now(1, 0) + color.rows), 4, cv::Scalar(b, g, r), 2);
         }
         cv::imshow("result", img_show);
+//        stringstream ss;
+//        string str;
+//        ss<<index;
+//        ss>>str;
+//        cv::imwrite("result_"+str+".png",img_show);
         cv::waitKey(0);
     }
     return 0;
