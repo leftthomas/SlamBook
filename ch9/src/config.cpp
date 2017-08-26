@@ -6,8 +6,6 @@
 
 namespace myslam {
 
-    shared_ptr<Config> Config::config_ = nullptr;
-
     Config::~Config() {
         if (file_.isOpened())
             file_.release();
@@ -20,6 +18,9 @@ namespace myslam {
         if (!config_->file_.isOpened()) {
             cerr << "parameter file " << "does not exist." << endl;
             config_->file_.release();
+            return;
         }
     }
+
+    shared_ptr<Config> Config::config_ = nullptr;
 }

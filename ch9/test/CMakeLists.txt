@@ -1,2 +1,1 @@
 add_executable(test_slam test_slam.cpp)
-target_link_libraries(test_slam myslam)

@@ -17,7 +17,7 @@ namespace myslam {
 
         Camera();
 
-        Camera::Camera(float fx_, float fy_, float cx_, float cy_, float depth_scale_) :
+        Camera(float fx_, float fy_, float cx_, float cy_, float depth_scale_) :
                 fx_(fx_), fy_(fy_), cx_(cx_), cy_(cy_), depth_scale_(depth_scale_) {}
 
 //    coordinate transform:world,camera,pixel
