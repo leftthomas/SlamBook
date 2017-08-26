@@ -14,7 +14,7 @@ namespace myslam {
         cv::FileStorage file_;
 
 //        private constructor makes it as a singleton
-        Config();
+        Config() {};
 
     public:
 //        close the file when deconstructing

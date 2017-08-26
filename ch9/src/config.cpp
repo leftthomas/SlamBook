@@ -18,7 +18,6 @@ namespace myslam {
         if (!config_->file_.isOpened()) {
             cerr << "parameter file " << "does not exist." << endl;
             config_->file_.release();
-            return;
         }
     }
 
