@@ -22,7 +22,7 @@ namespace myslam {
 
         void insertKeyFrame(Frame::Ptr frame);
 
-        void insertMapPoint(MapPoint::Ptr map_points);
+        void insertMapPoint(MapPoint::Ptr map_point);
     };
 }
 
