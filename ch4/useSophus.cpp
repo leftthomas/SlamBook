@@ -11,6 +11,12 @@ using namespace std;
 
 /**
  * 本程序演示了sophus中SO(3)与SE(3)的使用
+ * 注意,从GitHub上下载完Sophus之后要修改 sophus/so2.cpp 文件,将其中的
+ * unit_complex_.real() = 1.;
+ * unit_complex_.imag() = 0.;
+ * 修改为
+ * unit_complex_ = Complexd(1.,0.);
+ * 否则在Mac上无法编译
  * @param argc
  * @param argv
  * @return
