@@ -5,10 +5,12 @@
 #ifndef SLAMBOOK_MAP_H
 #define SLAMBOOK_MAP_H
 
+namespace myslam {
+    class Map {
 
-class Map {
+    };
+}
 
-};
 
 
 #endif //SLAMBOOK_MAP_H

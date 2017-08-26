@@ -6,9 +6,12 @@
 #define SLAMBOOK_CONFIG_H
 
 
-class Config {
+namespace myslam {
+    class Config {
 
-};
+    };
+}
+
 
 
 #endif //SLAMBOOK_CONFIG_H
