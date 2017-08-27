@@ -19,11 +19,11 @@ namespace myslam {
 
         void computeError() override;
 
+        void linearizeOplus() override;
+
         bool read(std::istream &is) override;
 
         bool write(std::ostream &os) const override;
-
-        void linearizeOplus() override;
 
         Vector3d point_;
         Camera *camera_;
