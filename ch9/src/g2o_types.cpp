@@ -11,7 +11,7 @@ namespace myslam {
     }
 
     void EdgeProjectXYZ2UVPoseOnly::linearizeOplus() {
-        auto pose = static_cast<g2o::VertexSE3Expmap *>(_vertices[0]);
+        auto *pose = static_cast<g2o::VertexSE3Expmap *>(_vertices[0]);
         const g2o::SE3Quat &T(pose->estimate());
         Vector3d xyz_trans = T.map(point_);
         double x = xyz_trans[0];
