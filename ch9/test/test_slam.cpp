@@ -42,7 +42,11 @@ int main(int argc, char **argv) {
             break;
     }
 
-    myslam::Camera::Ptr camera(new myslam::Camera);
+    myslam::Camera::Ptr camera(new myslam::Camera(myslam::Config::get<float>("camera.fx"),
+                                                  myslam::Config::get<float>("camera.fy"),
+                                                  myslam::Config::get<float>("camera.cx"),
+                                                  myslam::Config::get<float>("camera.cy"),
+                                                  myslam::Config::get<float>("camera.depth_scale")));
 
 //    visualization
     cv::viz::Viz3d vis("Visual Odometry");

@@ -16,8 +16,8 @@ namespace myslam {
         match_ratio_ = Config::get<float>("match_ratio");
         max_num_lost_ = Config::get<int>("max_num_lost");
         min_inliers_ = Config::get<int>("min_inliers");
-        key_frame_min_rot_ = Config::get<double>("key_frame_rotation");
-        key_frame_min_trans_ = Config::get<double>("key_frame_translation");
+        key_frame_min_rot_ = Config::get<double>("keyframe_rotation");
+        key_frame_min_trans_ = Config::get<double>("keyframe_translation");
         orb_ = cv::ORB::create(num_of_features_, scale_factor_, level_pyramid_);
     }
 
@@ -113,6 +113,7 @@ namespace myslam {
             pts_3d.push_back(pts_3d_ref_[m.queryIdx]);
             pts_2d.push_back(keypoints_curr_[m.trainIdx].pt);
         }
+
         cv::Mat_<double> K(3, 3);
         K << ref_->camera_->fx_, 0, ref_->camera_->cx_, 0, ref_->camera_->fy_, ref_->camera_->cy_, 0, 0, 1;
         Mat rvec, tvec, inliers;
