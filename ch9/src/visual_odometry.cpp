@@ -72,6 +72,20 @@ namespace myslam {
         orb_->compute(curr_->color_, keypoints_curr_, descriptors_curr_);
     }
 
+    void VisualOdometry::setRef3DPoints() {
+        pts_3d_ref.clear();
+        descriptors_ref_ = Mat();
+        for (int i = 0; i < keypoints_curr_.size(); ++i) {
+            double d = ref_->findDepth(keypoints_curr_[i]);
+            if (d > 0) {
+                Vector3d p_cam = ref_->camera_->pixel2camera(Vector2d(
+                        keypoints_curr_[i].pt.x, keypoints_curr_[i].pt.y), d);
+                pts_3d_ref.emplace_back(p_cam(0, 0), p_cam(1, 0), p_cam(2, 0));
+                descriptors_ref_.push_back(descriptors_curr_.row(i));
+            }
+        }
+    }
+
     void VisualOdometry::featuresMatching() {
         vector<cv::DMatch> matches;
         cv::BFMatcher matcher(cv::NORM_HAMMING);
@@ -92,11 +106,6 @@ namespace myslam {
     }
 
     void VisualOdometry::poseEstimationPnP() {
-
-    }
-
-    void VisualOdometry::setRef3DPoints() {
-
     }
 
     void VisualOdometry::addKeyFrame() {
