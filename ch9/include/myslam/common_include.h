@@ -15,6 +15,7 @@ using Eigen::Vector3d;
 
 // for Sophus
 #include <sophus/se3.h>
+#include <sophus/so3.h>
 
 using Sophus::SE3;
 using Sophus::SO3;

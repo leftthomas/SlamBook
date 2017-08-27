@@ -137,10 +137,15 @@ namespace myslam {
     }
 
     bool VisualOdometry::checkKeyFrame() {
-        return false;
+        Sophus::Vector6d d = T_c_r_estimated_.log();
+//        注意，平移在前，旋转在后
+        Vector3d trans = d.head(3);
+        Vector3d rot = d.tail(3);
+        return trans.norm() > key_frame_min_trans_ || rot.norm() > key_frame_min_rot_;
     }
 
     void VisualOdometry::addKeyFrame() {
-
+//        cout << "adding a key frame " << endl;
+        map_->insertKeyFrame(curr_);
     }
 }
