@@ -43,7 +43,7 @@ namespace myslam {
         int level_pyramid_;
 //        ratio for selecting good matches
         float match_ratio_;
-//        max number of continuous lost times
+//        max number of continuous lost frames
         int max_num_lost_;
         int min_inliers_;
 //        minimal rotation of two key frames

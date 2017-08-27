@@ -65,15 +65,30 @@ namespace myslam {
     }
 
     void VisualOdometry::extractKeyPoints() {
-
+        orb_->detect(curr_->color_, keypoints_curr_);
     }
 
     void VisualOdometry::computeDescriptors() {
-
+        orb_->compute(curr_->color_, keypoints_curr_, descriptors_curr_);
     }
 
     void VisualOdometry::featuresMatching() {
+        vector<cv::DMatch> matches;
+        cv::BFMatcher matcher(cv::NORM_HAMMING);
+        matcher.match(descriptors_ref_, descriptors_curr_, matches, cv::noArray());
 
+        float min_dist = min_element(matches.begin(), matches.end(), [](
+                const cv::DMatch &m1, const cv::DMatch &m2) {
+            return m1.distance < m2.distance;
+        })->distance;
+
+        features_matches_.clear();
+        for (cv::DMatch &m:matches) {
+            if (m.distance < max<float>(match_ratio_ * min_dist, 30.0)) {
+                features_matches_.push_back(m);
+            }
+        }
+//        cout<<"good matches:"<<features_matches_.size()<<endl;
     }
 
     void VisualOdometry::poseEstimationPnP() {
