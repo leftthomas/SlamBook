@@ -5,8 +5,11 @@
 //
 #include<iostream>
 #include <fstream>
-#include <myslam/config.h>
-#include <myslam/visual_odometry.h>
+#include <boost/timer.hpp>
+#include <opencv2/viz.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include "myslam/config.h"
+#include "myslam/visual_odometry.h"
 
 using namespace std;
 
@@ -40,5 +43,32 @@ int main(int argc, char **argv) {
     }
 
     myslam::Camera::Ptr camera(new myslam::Camera);
+
+//    visualization
+    cv::viz::Viz3d vis("Visual Odometry");
+    cv::viz::WCoordinateSystem world_coor(1.0), camera_coor(0.5);
+    cv::Point3d cam_pos(0, -1.0, -1.0), cam_focal_point(0, 0, 0), cam_y_dir(0, 1, 0);
+    cv::Affine3d cam_pose = cv::viz::makeCameraPose(cam_pos, cam_focal_point, cam_y_dir);
+    vis.setViewerPose(cam_pose);
+    world_coor.setRenderingProperty(cv::viz::LINE_WIDTH, 2.0);
+    camera_coor.setRenderingProperty(cv::viz::LINE_WIDTH, 1.0);
+    vis.showWidget("World", world_coor);
+    vis.showWidget("Camera", camera_coor);
+
+    cout << "read total " << rgb_files.size() << " entries" << endl;
+    for (int i = 0; i < rgb_files.size(); ++i) {
+        Mat color = cv::imread(rgb_files[i]);
+        Mat depth = cv::imread(depth_files[i], -1);
+        if (color.data == nullptr || depth.data == nullptr)
+            break;
+        myslam::Frame::Ptr pFrame = myslam::Frame::createFrame();
+        pFrame->camera_ = camera;
+        pFrame->color_ = color;
+        pFrame->depth_ = depth;
+        pFrame->time_stamp_ = rgb_times[i];
+        boost::timer timer;
+        vo->addFrame(pFrame);
+        cout << "VO costs time:" << timer.elapsed() << endl;
+    }
     return 0;
 }
