@@ -3,17 +3,16 @@
 //
 
 #include "myslam/g2o_types.h"
-
 namespace myslam {
 
     void EdgeProjectXYZ2UVPoseOnly::computeError() {
-        const g2o::VertexSE3Expmap *pose = static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
+        const auto *pose = static_cast<const g2o::VertexSE3Expmap *>(_vertices[0]);
         _error = _measurement - camera_->camera2pixel(pose->estimate().map(point_));
     }
 
     void EdgeProjectXYZ2UVPoseOnly::linearizeOplus() {
-        g2o::VertexSE3Expmap *pose = static_cast<g2o::VertexSE3Expmap *>(_vertices[0]);
-        g2o::SE3Quat T(pose->estimate());
+        auto pose = static_cast<g2o::VertexSE3Expmap *>(_vertices[0]);
+        const g2o::SE3Quat &T(pose->estimate());
         Vector3d xyz_trans = T.map(point_);
         double x = xyz_trans[0];
         double y = xyz_trans[1];
