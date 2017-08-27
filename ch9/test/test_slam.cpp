@@ -7,7 +7,7 @@
 #include <fstream>
 #include <boost/timer.hpp>
 #include <opencv2/viz.hpp>
-#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include "myslam/config.h"
 #include "myslam/visual_odometry.h"
 
@@ -68,7 +68,23 @@ int main(int argc, char **argv) {
         pFrame->time_stamp_ = rgb_times[i];
         boost::timer timer;
         vo->addFrame(pFrame);
-        cout << "VO costs time:" << timer.elapsed() << endl;
+        cout << "VO costs time:" << timer.elapsed() * 1000 << " ms" << endl;
+
+        if (vo->state_ == myslam::VisualOdometry::LOST)
+            break;
+        SE3 Tcw = pFrame->T_c_w.inverse();
+
+//        show the map and the camera pose
+        cv::Affine3d M{static_cast<const Mat &>(cv::Affine3d::Mat3{
+                Tcw.rotation_matrix()(0, 0), Tcw.rotation_matrix()(0, 1), Tcw.rotation_matrix()(0, 2),
+                Tcw.rotation_matrix()(1, 0), Tcw.rotation_matrix()(1, 1), Tcw.rotation_matrix()(1, 2),
+                Tcw.rotation_matrix()(2, 0), Tcw.rotation_matrix()(2, 1), Tcw.rotation_matrix()(2, 2),}),
+                       cv::Affine3d::Vec3(Tcw.translation()(0, 0), Tcw.translation()(1, 0), Tcw.translation()(2, 0))
+        };
+        cv::imshow("image", color);
+        cv::waitKey(1);
+        vis.setWidgetPose("Camera", M);
+        vis.spinOnce(1, false);
     }
     return 0;
 }

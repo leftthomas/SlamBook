@@ -81,7 +81,7 @@ namespace myslam {
             if (d > 0) {
                 Vector3d p_cam = ref_->camera_->pixel2camera(Vector2d(
                         keypoints_curr_[i].pt.x, keypoints_curr_[i].pt.y), d);
-                pts_3d_ref_.emplace_back(p_cam(0, 0), p_cam(1, 0), p_cam(2, 0));
+                pts_3d_ref_.push_back(cv::Point3f(p_cam(0, 0), p_cam(1, 0), p_cam(2, 0)));
                 descriptors_ref_.push_back(descriptors_curr_.row(i));
             }
         }
