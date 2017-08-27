@@ -26,7 +26,7 @@ namespace myslam {
 //        orb detector and computer
         cv::Ptr<cv::ORB> orb_;
 //        3d points in reference frame
-        vector<cv::Point3f> pts_3d_ref;
+        vector<cv::Point3f> pts_3d_ref_;
         vector<cv::KeyPoint> keypoints_curr_;
         Mat descriptors_curr_;
         Mat descriptors_ref_;

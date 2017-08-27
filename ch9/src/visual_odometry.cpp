@@ -4,6 +4,7 @@
 
 #include "myslam/visual_odometry.h"
 #include "myslam/config.h"
+#include <opencv2/calib3d/calib3d.hpp>
 
 namespace myslam {
 
@@ -73,14 +74,14 @@ namespace myslam {
     }
 
     void VisualOdometry::setRef3DPoints() {
-        pts_3d_ref.clear();
+        pts_3d_ref_.clear();
         descriptors_ref_ = Mat();
         for (int i = 0; i < keypoints_curr_.size(); ++i) {
             double d = ref_->findDepth(keypoints_curr_[i]);
             if (d > 0) {
                 Vector3d p_cam = ref_->camera_->pixel2camera(Vector2d(
                         keypoints_curr_[i].pt.x, keypoints_curr_[i].pt.y), d);
-                pts_3d_ref.emplace_back(p_cam(0, 0), p_cam(1, 0), p_cam(2, 0));
+                pts_3d_ref_.emplace_back(p_cam(0, 0), p_cam(1, 0), p_cam(2, 0));
                 descriptors_ref_.push_back(descriptors_curr_.row(i));
             }
         }
@@ -106,6 +107,20 @@ namespace myslam {
     }
 
     void VisualOdometry::poseEstimationPnP() {
+        vector<cv::Point3f> pts_3d;
+        vector<cv::Point2f> pts_2d;
+        for (cv::DMatch &m:features_matches_) {
+            pts_3d.push_back(pts_3d_ref_[m.queryIdx]);
+            pts_2d.push_back(keypoints_curr_[m.trainIdx].pt);
+        }
+        cv::Mat_<double> K(3, 3);
+        K << ref_->camera_->fx_, 0, ref_->camera_->cx_, 0, ref_->camera_->fy_, ref_->camera_->cy_, 0, 0, 1;
+        Mat rvec, tvec, inliers;
+        cv::solvePnPRansac(pts_3d, pts_2d, K, Mat(), rvec, tvec, false, 100, 4.0, 0.99, inliers);
+        num_inliers_ = inliers.rows;
+//        cout<<"PnP inliers: "<<num_inliers_<<endl;
+        T_c_r_estimated_ = SE3(SO3(rvec.at<double>(0, 0), rvec.at<double>(1, 0), rvec.at<double>(2, 0)),
+                               Vector3d(tvec.at<double>(0, 0), tvec.at<double>(1, 0), tvec.at<double>(2, 0)));
     }
 
     void VisualOdometry::addKeyFrame() {
