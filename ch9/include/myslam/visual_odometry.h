@@ -39,7 +39,7 @@ namespace myslam {
 //        paramters;
         int num_of_features_;
 //        scale in image pyramid
-        double scale_factor_;
+        float scale_factor_;
         int level_pyramid_;
 //        ratio for selecting good matches
         float match_ratio_;
