@@ -123,10 +123,6 @@ namespace myslam {
                                Vector3d(tvec.at<double>(0, 0), tvec.at<double>(1, 0), tvec.at<double>(2, 0)));
     }
 
-    void VisualOdometry::addKeyFrame() {
-
-    }
-
     bool VisualOdometry::checkEstimatedPose() {
         if (num_inliers_ < min_inliers_) {
             cout << "reject because the number of inliers is too small: " << num_inliers_ << endl;
@@ -144,4 +140,7 @@ namespace myslam {
         return false;
     }
 
+    void VisualOdometry::addKeyFrame() {
+
+    }
 }
