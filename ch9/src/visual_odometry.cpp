@@ -128,7 +128,16 @@ namespace myslam {
     }
 
     bool VisualOdometry::checkEstimatedPose() {
-        return false;
+        if (num_inliers_ < min_inliers_) {
+            cout << "reject because the number of inliers is too small: " << num_inliers_ << endl;
+            return false;
+        }
+        Sophus::Vector6d d = T_c_r_estimated_.log();
+        if (d.norm() > 5.0) {
+            cout << "reject because the motion is too large: " << d.norm() << endl;
+            return false;
+        }
+        return true;
     }
 
     bool VisualOdometry::checkKeyFrame() {
