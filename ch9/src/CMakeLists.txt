@@ -1,4 +1,2 @@
-add_library(myslam SHARED
-        #        ../include/myslam/
-        frame.cpp map.cpp camera.cpp config.cpp visual_odometry.cpp)
+add_library(myslam SHARED config.cpp camera.cpp frame.cpp visual_odometry.cpp)
 target_link_libraries(myslam ${THIRD_PARTY_LIBS})

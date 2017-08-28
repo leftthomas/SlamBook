@@ -13,7 +13,7 @@
 
 namespace myslam {
 
-    VisualOdometry::VisualOdometry() : state_(INITIALIZING), map_(new Map), ref_(nullptr), curr_(nullptr),
+    VisualOdometry::VisualOdometry() : state_(INITIALIZING), ref_(nullptr), curr_(nullptr),
                                        num_inliers_(0), num_lost_(0) {
         num_of_features_ = Config::get<int>("number_of_features");
         scale_factor_ = Config::get<float>("scale_factor");
@@ -21,8 +21,6 @@ namespace myslam {
         match_ratio_ = Config::get<float>("match_ratio");
         max_num_lost_ = Config::get<int>("max_num_lost");
         min_inliers_ = Config::get<int>("min_inliers");
-        key_frame_min_rot_ = Config::get<double>("keyframe_rotation");
-        key_frame_min_trans_ = Config::get<double>("keyframe_translation");
         orb_ = cv::ORB::create(num_of_features_, scale_factor_, level_pyramid_);
     }
 
@@ -33,7 +31,6 @@ namespace myslam {
             case INITIALIZING: {
                 state_ = OK;
                 curr_ = ref_ = frame;
-                map_->insertKeyFrame(frame);
 //                extract features from first frame
                 extractKeyPoints();
                 computeDescriptors();
@@ -52,8 +49,6 @@ namespace myslam {
                     ref_ = curr_;
                     setRef3DPoints();
                     num_lost_ = 0;
-                    if (checkKeyFrame())
-                        addKeyFrame();
                 } else {
                     num_lost_++;
                     if (num_lost_ > max_num_lost_)
@@ -140,18 +135,5 @@ namespace myslam {
             return false;
         }
         return true;
-    }
-
-    bool VisualOdometry::checkKeyFrame() {
-        Sophus::Vector6d d = T_c_r_estimated_.log();
-//        注意，平移在前，旋转在后
-        Vector3d trans = d.head(3);
-        Vector3d rot = d.tail(3);
-        return trans.norm() > key_frame_min_trans_ || rot.norm() > key_frame_min_rot_;
-    }
-
-    void VisualOdometry::addKeyFrame() {
-//        cout << "adding a key frame " << endl;
-        map_->insertKeyFrame(curr_);
     }
 }

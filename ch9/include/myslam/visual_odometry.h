@@ -6,7 +6,7 @@
 #define SLAMBOOK_VISULA_ODOMETRY_H
 
 #include "myslam/common_include.h"
-#include "myslam/map.h"
+#include "myslam/frame.h"
 #include <opencv2/features2d/features2d.hpp>
 
 namespace myslam {
@@ -20,7 +20,6 @@ namespace myslam {
         };
 //        current VO status
         VOState state_;
-        Map::Ptr map_;
         Frame::Ptr ref_;
         Frame::Ptr curr_;
 //        orb detector and computer
@@ -46,10 +45,6 @@ namespace myslam {
 //        max number of continuous lost frames
         int max_num_lost_;
         int min_inliers_;
-//        minimal rotation of two key frames
-        double key_frame_min_rot_;
-//        minimal translation of two key frames
-        double key_frame_min_trans_;
 
 //        functions
         VisualOdometry();
@@ -71,11 +66,7 @@ namespace myslam {
 
         void setRef3DPoints();
 
-        void addKeyFrame();
-
         bool checkEstimatedPose();
-
-        bool checkKeyFrame();
     };
 }
 
