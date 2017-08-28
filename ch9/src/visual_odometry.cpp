@@ -152,6 +152,22 @@ namespace myslam {
 
     void VisualOdometry::addKeyFrame() {
 //        cout << "adding a key frame " << endl;
+        if (map_->key_frames_.empty()) {
+//            first key frame, add all 3d points into map
+            for (int i = 0; i < keypoints_curr_.size(); ++i) {
+                double d = curr_->findDepth(keypoints_curr_[i]);
+                if (d < 0)
+                    continue;
+                Vector3d p_world = ref_->camera_->pixel2world(Vector2d(
+                        keypoints_curr_[i].pt.x, keypoints_curr_[i].pt.y), curr_->T_c_w, d);
+                Vector3d n = p_world - ref_->getCameraCenter();
+                n.normalize();
+                MapPoint::Ptr map_point = MapPoint::createMapPoint(
+                        p_world, n, descriptors_curr_.row(i).clone(), curr_.get());
+                map_->insertMapPoint(map_point);
+            }
+        }
         map_->insertKeyFrame(curr_);
+        ref_ = curr_;
     }
 }
