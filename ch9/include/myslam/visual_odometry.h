@@ -25,12 +25,16 @@ namespace myslam {
         Frame::Ptr curr_;
 //        orb detector and computer
         cv::Ptr<cv::ORB> orb_;
-//        3d points in reference frame
-        vector<cv::Point3f> pts_3d_ref_;
+
         vector<cv::KeyPoint> keypoints_curr_;
         Mat descriptors_curr_;
-        Mat descriptors_ref_;
-        vector<cv::DMatch> features_matches_;
+
+        // flann matcher
+        cv::FlannBasedMatcher matcher_flann_;
+        // matched 3d points
+        vector<MapPoint::Ptr> match_3dpts_;
+        // matched 2d pixels (index of kp_curr)
+        vector<int> match_2dkp_index_;
 
         SE3 T_c_r_estimated_;
         int num_inliers_;
@@ -50,6 +54,8 @@ namespace myslam {
         double key_frame_min_rot_;
 //        minimal translation of two key frames
         double key_frame_min_trans_;
+//        remove map point ratio
+        double map_point_erase_ratio_;
 
 //        functions
         VisualOdometry();
@@ -60,7 +66,6 @@ namespace myslam {
         bool addFrame(Frame::Ptr frame);
 
     protected:
-//        inner operation
         void extractKeyPoints();
 
         void computeDescriptors();
@@ -69,7 +74,11 @@ namespace myslam {
 
         void poseEstimationPnP();
 
-        void setRef3DPoints();
+        void optimizeMap();
+
+        double getViewAngle(Frame::Ptr frame, MapPoint::Ptr point);
+
+        void addMapPoints();
 
         void addKeyFrame();
 
