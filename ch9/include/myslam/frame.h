@@ -17,7 +17,7 @@ public:
 //    when it's recorded
     double time_stamp_;
 //    transform from world to camera
-    SE3 T_c_w;
+    SE3 T_c_w_;
 //    Pinhole RGB-D Camera model
     Camera::Ptr camera_;
 //    color and depth image

@@ -15,7 +15,7 @@ namespace myslam {
 
     VisualOdometry::VisualOdometry() : state_(INITIALIZING), map_(new Map), ref_(nullptr), curr_(nullptr),
                                        num_inliers_(0), num_lost_(0),
-                                       matcher_flann_(new cv::flann::LshIndexParams(5, 10, 2) {
+                                       matcher_flann_(new cv::flann::LshIndexParams(5, 10, 2)) {
         num_of_features_ = Config::get<int>("number_of_features");
         scale_factor_ = Config::get<float>("scale_factor");
         level_pyramid_ = Config::get<int>("level_pyramid");
@@ -43,13 +43,13 @@ namespace myslam {
             }
             case OK: {
                 curr_ = frame;
-                curr_->T_c_w = ref_->T_c_w;
+                curr_->T_c_w_ = ref_->T_c_w_;
                 extractKeyPoints();
                 computeDescriptors();
                 featuresMatching();
                 poseEstimationPnP();
                 if (checkEstimatedPose()) {
-                    curr_->T_c_w = T_c_r_estimated_;
+                    curr_->T_c_w_ = T_c_r_estimated_;
                     optimizeMap();
                     num_lost_ = 0;
                     if (checkKeyFrame())
@@ -136,7 +136,8 @@ namespace myslam {
             cout << "reject because the number of inliers is too small: " << num_inliers_ << endl;
             return false;
         }
-        Sophus::Vector6d d = T_c_r_estimated_.log();
+        SE3 T_r_c = ref_->T_c_w_ * T_c_r_estimated_.inverse();
+        Sophus::Vector6d d = T_r_c.log();
         if (d.norm() > 5.0) {
             cout << "reject because the motion is too large: " << d.norm() << endl;
             return false;
@@ -145,7 +146,8 @@ namespace myslam {
     }
 
     bool VisualOdometry::checkKeyFrame() {
-        Sophus::Vector6d d = T_c_r_estimated_.log();
+        SE3 T_r_c = ref_->T_c_w_ * T_c_r_estimated_.inverse();
+        Sophus::Vector6d d = T_r_c.log();
 //        注意，平移在前，旋转在后
         Vector3d trans = d.head(3);
         Vector3d rot = d.tail(3);
@@ -161,7 +163,7 @@ namespace myslam {
                 if (d < 0)
                     continue;
                 Vector3d p_world = ref_->camera_->pixel2world(Vector2d(
-                        keypoints_curr_[i].pt.x, keypoints_curr_[i].pt.y), curr_->T_c_w, d);
+                        keypoints_curr_[i].pt.x, keypoints_curr_[i].pt.y), curr_->T_c_w_, d);
                 Vector3d n = p_world - ref_->getCameraCenter();
                 n.normalize();
                 MapPoint::Ptr map_point = MapPoint::createMapPoint(
@@ -212,6 +214,23 @@ namespace myslam {
     }
 
     void VisualOdometry::addMapPoints() {
-
+        // add the new map points into map
+        vector<bool> matched(keypoints_curr_.size(), false);
+        for (int index:match_2dkp_index_)
+            matched[index] = true;
+        for (int i = 0; i < keypoints_curr_.size(); i++) {
+            if (matched[i] == true)
+                continue;
+            double d = ref_->findDepth(keypoints_curr_[i]);
+            if (d < 0)
+                continue;
+            Vector3d p_world = ref_->camera_->pixel2world(Vector2d(
+                    keypoints_curr_[i].pt.x, keypoints_curr_[i].pt.y), curr_->T_c_w_, d);
+            Vector3d n = p_world - ref_->getCameraCenter();
+            n.normalize();
+            MapPoint::Ptr map_point = MapPoint::createMapPoint(
+                    p_world, n, descriptors_curr_.row(i).clone(), curr_.get());
+            map_->insertMapPoint(map_point);
+        }
     }
 }
