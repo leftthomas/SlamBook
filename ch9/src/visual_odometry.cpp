@@ -4,14 +4,13 @@
 // malloc: *** mach_vm_map(size=9288052384388087808) failed (error code=3)
 // *** error: can't allocate region
 // 错误
+// 这里删除了，可以上GitHub看历史commit
 //
 
 #include "myslam/visual_odometry.h"
 #include "myslam/config.h"
 #include "myslam/g2o_types.h"
 #include <opencv2/calib3d/calib3d.hpp>
-#include <g2o/core/optimization_algorithm_levenberg.h>
-#include <g2o/solvers/dense/linear_solver_dense.h>
 
 namespace myslam {
 
@@ -129,87 +128,6 @@ namespace myslam {
 //        cout<<"PnP inliers: "<<num_inliers_<<endl;
         T_c_r_estimated_ = SE3(SO3(rvec.at<double>(0, 0), rvec.at<double>(1, 0), rvec.at<double>(2, 0)),
                                Vector3d(tvec.at<double>(0, 0), tvec.at<double>(1, 0), tvec.at<double>(2, 0)));
-
-////        using bundle adjustment to optimize the pose
-//        typedef g2o::BlockSolver<g2o::BlockSolverTraits<6, 2>> Block;
-//        Block::LinearSolverType *linearSolver = new g2o::LinearSolverDense<Block::PoseMatrixType>();
-//        auto *solver_ptr = new Block(linearSolver);
-//        auto *solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
-//        g2o::SparseOptimizer optimizer;
-//        optimizer.setAlgorithm(solver);
-//
-//        auto *pose = new g2o::VertexSE3Expmap();
-//        pose->setId(0);
-//        pose->setEstimate(g2o::SE3Quat(T_c_r_estimated_.rotation_matrix(), T_c_r_estimated_.translation()));
-//        optimizer.addVertex(pose);
-//
-////    edges
-//        for (int i = 0; i < inliers.rows; i++) {
-//            int index = inliers.at<int>(i, 0);
-////            3D->2D projection
-//            auto *edge = new EdgeProjectXYZ2UVPoseOnly();
-//            edge->setId(i);
-//            edge->setVertex(0, pose);
-//            edge->camera_ = curr_->camera_.get();
-//            edge->point_ = Vector3d(pts_3d[index].x, pts_3d[index].y, pts_3d[index].z);
-//            edge->setMeasurement(Vector2d(pts_2d[index].x, pts_2d[index].y));
-//            edge->setInformation(Eigen::Matrix2d::Identity());
-//            optimizer.addEdge(edge);
-//        }
-//
-//        optimizer.initializeOptimization();
-//        optimizer.optimize(10);
-//        T_c_r_estimated_ = SE3(pose->estimate().rotation(), pose->estimate().translation());
-
-
-        typedef g2o::BlockSolver<g2o::BlockSolverTraits<6, 3>> Block;
-        Block::LinearSolverType *linearSolver = new g2o::LinearSolverDense<Block::PoseMatrixType>();
-        auto *solver_ptr = new Block(linearSolver);
-        auto *solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
-        g2o::SparseOptimizer optimizer;
-        optimizer.setAlgorithm(solver);
-
-//    vertex
-        auto *pose = new g2o::VertexSE3Expmap();
-        pose->setId(0);
-        pose->setEstimate(g2o::SE3Quat(T_c_r_estimated_.rotation_matrix(), T_c_r_estimated_.translation()));
-        optimizer.addVertex(pose);
-
-//    landmarks
-        int j = 1;
-        for (int i = 0; i < inliers.rows; i++) {
-            int index = inliers.at<int>(i, 0);
-            auto *point = new g2o::VertexSBAPointXYZ();
-            point->setId(j++);
-            point->setEstimate(Vector3d(pts_3d[index].x, pts_3d[index].y, pts_3d[index].z));
-            point->setMarginalized(true);
-            optimizer.addVertex(point);
-        }
-
-//    parameter: camera intrinsics
-        g2o::CameraParameters *camera = new g2o::CameraParameters(
-                K.at<double>(0, 0), Eigen::Vector2d(K.at<double>(0, 2), K.at<double>(1, 2)), 0);
-        camera->setId(0);
-        optimizer.addParameter(camera);
-
-//    edges
-        j = 1;
-        for (int i = 0; i < inliers.rows; i++) {
-            int index = inliers.at<int>(i, 0);
-            auto *edge = new g2o::EdgeProjectXYZ2UV();
-            edge->setId(j);
-            edge->setVertex(0, dynamic_cast<g2o::VertexSBAPointXYZ *>(optimizer.vertex(j)));
-            edge->setVertex(1, pose);
-            edge->setMeasurement(Vector2d(pts_2d[index].x, pts_2d[index].y));
-            edge->setParameterId(0, 0);
-            edge->setInformation(Eigen::Matrix2d::Identity());
-            optimizer.addEdge(edge);
-            j++;
-        }
-        optimizer.initializeOptimization();
-        optimizer.optimize(10);
-
-
     }
 
     bool VisualOdometry::checkEstimatedPose() {
