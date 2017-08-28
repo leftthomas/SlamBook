@@ -9,7 +9,6 @@
 
 #include "myslam/visual_odometry.h"
 #include "myslam/config.h"
-#include "myslam/g2o_types.h"
 #include <opencv2/calib3d/calib3d.hpp>
 
 namespace myslam {
