@@ -20,9 +20,6 @@ namespace myslam {
 //        Normal of viewing direction
         Vector3d norm_;
         Mat descriptor_;
-        int observed_times_;
-//        being an inliner in pose estimation
-        int correct_times_;
 //        key frames that can observe this point
         list<Frame *> observed_frames_;
 //        being an inliner in pose estimation
