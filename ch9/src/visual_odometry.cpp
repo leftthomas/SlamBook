@@ -80,21 +80,35 @@ namespace myslam {
 
     void VisualOdometry::featuresMatching() {
         vector<cv::DMatch> matches;
-        cv::BFMatcher matcher(cv::NORM_HAMMING);
-        matcher.match(descriptors_ref_, descriptors_curr_, matches, cv::noArray());
+//        select the candidates in map
+        Mat desp_map;
+        vector<MapPoint::Ptr> candidates;
+        for (auto &allpoints:map_->map_points_) {
+            MapPoint::Ptr &p = allpoints.second;
+//            check if p in curr frame image
+            if (curr_->isInFrame(p->pos_)) {
+//                add to candidate
+                p->visible_times_++;
+                candidates.push_back(p);
+                desp_map.push_back(p->descriptor_);
+            }
+        }
+        matcher_flann_.match(desp_map, descriptors_curr_, matches, cv::noArray());
 
         float min_dist = min_element(matches.begin(), matches.end(), [](
                 const cv::DMatch &m1, const cv::DMatch &m2) {
             return m1.distance < m2.distance;
         })->distance;
 
-        features_matches_.clear();
+        match_3dpts_.clear();
+        match_2dkp_index_.clear();
         for (cv::DMatch &m:matches) {
             if (m.distance < max<float>(match_ratio_ * min_dist, 30.0)) {
-                features_matches_.push_back(m);
+                match_3dpts_.push_back(candidates[m.queryIdx]);
+                match_2dkp_index_.push_back(m.trainIdx);
             }
         }
-//        cout<<"good matches:"<<features_matches_.size()<<endl;
+        cout << "good matches:" << match_3dpts_.size() << endl;
     }
 
     void VisualOdometry::poseEstimationPnP() {
