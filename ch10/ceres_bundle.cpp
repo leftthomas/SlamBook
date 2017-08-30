@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
     options.gradient_tolerance = 1e-16;
     options.function_tolerance = 1e-16;
     Solver::Summary summary;
-    Solve(options, &problem, &summary);
+    ceres::Solve(options, &problem, &summary);
     cout << summary.FullReport() << endl;
 
     // write the result into a .ply file.
