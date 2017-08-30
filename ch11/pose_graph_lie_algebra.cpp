@@ -5,9 +5,6 @@
 #include <g2o/core/base_binary_edge.h>
 #include <g2o/core/block_solver.h>
 #include <g2o/core/optimization_algorithm_levenberg.h>
-#include <g2o/core/optimization_algorithm_gauss_newton.h>
-#include <g2o/core/optimization_algorithm_dogleg.h>
-#include <g2o/solvers/dense/linear_solver_dense.h>
 #include <g2o/solvers/cholmod/linear_solver_cholmod.h>
 #include <sophus/so3.h>
 #include <sophus/se3.h>
@@ -27,9 +24,6 @@ Matrix6d JRInv(SE3 e) {
     J = 0.5 * J + Matrix6d::Identity();
     return J;
 }
-
-//李代数顶点
-typedef Eigen::Matrix<double, 6, 1> Vector6d;
 
 class VertexSE3LieAlgebra : public g2o::BaseVertex<6, SE3> {
 public:
@@ -130,6 +124,82 @@ public:
  * @return
  */
 int main(int argc, char **argv) {
+    if (argc != 2) {
+        cout << "Usage: pose_graph_lie_algebra sphere.g2o" << endl;
+        return 1;
+    }
+    ifstream fin(argv[1]);
+    if (!fin) {
+        cout << "file " << argv[1] << " does not exist." << endl;
+        return 1;
+    }
+    // BlockSolver为6x6
+    typedef g2o::BlockSolver<g2o::BlockSolverTraits<6, 6>> Block;
+    // 线性方程求解器
+    Block::LinearSolverType *linearSolver = new g2o::LinearSolverCholmod<Block::PoseMatrixType>();
+    // 矩阵块求解器
+    auto *solver_ptr = new Block(linearSolver);
+    auto *solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+    // 图模型
+    g2o::SparseOptimizer optimizer;
+    // 设置求解器
+    optimizer.setAlgorithm(solver);
+    // 顶点和边的数量
+    int vertexCnt = 0, edgeCnt = 0;
 
+    vector<VertexSE3LieAlgebra *> vectices;
+    vector<EdgeSE3LieAlgebra *> edges;
+    while (!fin.eof()) {
+        string name;
+        fin >> name;
+        if (name == "VERTEX_SE3:QUAT") {
+            // 顶点
+            auto *v = new VertexSE3LieAlgebra();
+            int index = 0;
+            fin >> index;
+            v->setId(index);
+            v->read(fin);
+            optimizer.addVertex(v);
+            vertexCnt++;
+            vectices.push_back(v);
+            if (index == 0)
+                v->setFixed(true);
+        } else if (name == "EDGE_SE3:QUAT") {
+            // SE3-SE3 边
+            auto *e = new EdgeSE3LieAlgebra();
+            // 关联的两个顶点
+            int idx1, idx2;
+            fin >> idx1 >> idx2;
+            e->setId(edgeCnt++);
+            e->setVertex(0, optimizer.vertices()[idx1]);
+            e->setVertex(1, optimizer.vertices()[idx2]);
+            e->read(fin);
+            optimizer.addEdge(e);
+            edges.push_back(e);
+        }
+        if (!fin.good()) break;
+    }
+
+    cout << "read total " << vertexCnt << " vertices, " << edgeCnt << " edges." << endl;
+
+    cout << "prepare optimizing ..." << endl;
+    optimizer.setVerbose(true);
+    optimizer.initializeOptimization();
+    cout << "calling optimizing ..." << endl;
+    optimizer.optimize(30);
+
+    cout << "saving optimization results ." << endl;
+    // 因为用了自定义顶点且没有向g2o注册，这里保存自己来实现
+    // 伪装成 SE3 顶点和边，让 g2o_viewer 可以认出
+    ofstream fout("result_lie.g2o");
+    for (VertexSE3LieAlgebra *v:vectices) {
+        fout << "VERTEX_SE3:QUAT ";
+        v->write(fout);
+    }
+    for (EdgeSE3LieAlgebra *e:edges) {
+        fout << "EDGE_SE3:QUAT ";
+        e->write(fout);
+    }
+    fout.close();
     return 0;
 }
