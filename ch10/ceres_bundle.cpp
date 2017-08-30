@@ -31,7 +31,7 @@ void BuildProblem(BALProblem *bal_problem, Problem *problem, const BundleParams 
     }
 }
 
-void setOrdering(BALProblem *bal_problem, Solver::Options *options, const BundleParams *params) {
+void setOrdering(BALProblem *bal_problem, Solver::Options *options, const BundleParams &params) {
     const int num_points = bal_problem->num_points();
     const int point_block_size = bal_problem->point_block_size();
     double *points = bal_problem->mutable_points();
@@ -39,7 +39,7 @@ void setOrdering(BALProblem *bal_problem, Solver::Options *options, const Bundle
     const int cameras_block_size = bal_problem->camera_block_size();
     double *cameras = bal_problem->mutable_cameras();
 
-    if (params->ordering == "automatic")
+    if (params.ordering == "automatic")
         return;
     auto *ordering = new ParameterBlockOrdering;
 //    the points come before the cameras
@@ -50,6 +50,25 @@ void setOrdering(BALProblem *bal_problem, Solver::Options *options, const Bundle
         ordering->AddElementToGroup(cameras + cameras_block_size * i, 1);
     }
     options->linear_solver_ordering.reset();
+}
+
+void setSolverOptionsFromFlags(BALProblem *bal_problem, const BundleParams &params, Solver::Options *options) {
+    options->max_num_iterations = params.num_iterations;
+    options->minimizer_progress_to_stdout = true;
+    options->num_threads = params.num_threads;
+
+//    选取下降策略
+    CHECK(StringToTrustRegionStrategyType(params.trust_region_strategy, &options->trust_region_strategy_type));
+
+//    选取linear solver
+    CHECK(StringToLinearSolverType(params.linear_solver, &options->linear_solver_type));
+    CHECK(StringToSparseLinearAlgebraLibraryType(params.sparse_linear_algebra_library,
+                                                 &options->sparse_linear_algebra_library_type));
+    CHECK(StringToDenseLinearAlgebraLibraryType(params.dense_linear_algebra_library,
+                                                &options->dense_linear_algebra_library_type));
+
+//    设置变量排序
+    setOrdering(bal_problem, options, params);
 }
 
 
