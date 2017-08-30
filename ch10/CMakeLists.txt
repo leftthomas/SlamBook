@@ -14,4 +14,4 @@ add_library(ParseCmd SHARED ${PROJECT_SOURCE_DIR}/common/flags/command_args.cpp)
 
 # 添加一个可执行程序
 add_executable(ceres_bundle ceres_bundle.cpp)
-target_link_libraries(ceres_bundle BALProblem ParseCmd)
+target_link_libraries(ceres_bundle BALProblem ParseCmd ${CERES_LIBRARIES})
