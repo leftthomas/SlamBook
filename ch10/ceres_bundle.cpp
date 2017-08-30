@@ -5,6 +5,9 @@
 using namespace std;
 using namespace ceres;
 
+// 在Mac上的Clion中运行，配置参数如下:
+// -input ../../ch10/data/problem-16-22106-pre.txt -initial_ply ../../ch10/data/initial.ply -final_ply ../../ch10/data/final.ply
+
 
 void BuildProblem(BALProblem *bal_problem, Problem *problem, const BundleParams &params) {
     const int point_block_size = bal_problem->point_block_size();
