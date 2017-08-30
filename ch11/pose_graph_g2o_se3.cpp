@@ -1,5 +1,5 @@
 #include<iostream>
-
+#include <g2o/types>
 using namespace std;
 
 /**
