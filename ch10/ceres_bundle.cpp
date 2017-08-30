@@ -3,7 +3,7 @@
 using namespace std;
 
 /**
- * 本程序演示了后端g2o bundle
+ * 本程序演示了后端ceres bundle
  * @param argc
  * @param argv
  * @return
