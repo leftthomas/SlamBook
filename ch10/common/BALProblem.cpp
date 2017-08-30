@@ -45,7 +45,7 @@ BALProblem::BALProblem(const std::string &filename, bool use_quaternions) {
 
     std::cout << "Header: " << num_cameras_
               << " " << num_points_
-              << " " << num_observations_;
+              << " " << num_observations_ << "\n";
 
     point_index_ = new int[num_observations_];
     camera_index_ = new int[num_observations_];

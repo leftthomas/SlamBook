@@ -89,10 +89,10 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    BALProblem bal_problem(params.input.c_str());
+    BALProblem bal_problem(params.input);
 
     // show some information here ...
-    cout << "bal problem file loaded..." << endl;
+    cout << "bal problem file loaded." << endl;
     cout << "bal problem have " << bal_problem.num_cameras() << " cameras and "
          << bal_problem.num_points() << " points. " << endl;
     cout << "forming " << bal_problem.num_observations() << " observatoins. " << endl;
@@ -102,19 +102,19 @@ int main(int argc, char **argv) {
         bal_problem.WriteToPLYFile(params.initial_ply);
     }
 
-    cout << "beginning problem..." << endl;
+    cout << "beginning problem." << endl;
 
     // add some noise for the intial value
     srand(static_cast<unsigned int>(params.random_seed));
     bal_problem.Normalize();
     bal_problem.Perturb(params.rotation_sigma, params.translation_sigma, params.point_sigma);
 
-    cout << "normalization complete..." << endl;
+    cout << "normalization complete." << endl;
 
     Problem problem;
     BuildProblem(&bal_problem, &problem, params);
 
-    cout << "the problem is successfully build.." << endl;
+    cout << "the problem is successfully build." << endl;
 
     Solver::Options options;
     setSolverOptionsFromFlags(&bal_problem, params, &options);
