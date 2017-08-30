@@ -21,5 +21,5 @@ add_library(BALProblem SHARED ${PROJECT_SOURCE_DIR}/common/BALProblem.cpp)
 add_library(ParseCmd SHARED ${PROJECT_SOURCE_DIR}/common/flags/command_args.cpp)
 
 # 添加一个可执行程序
-add_executable(g2o_bundle g2o_bundle.cpp)
+add_executable(g2o_bundle g2o_bal_class.h g2o_bundle.cpp)
 target_link_libraries(g2o_bundle BALProblem ParseCmd)
