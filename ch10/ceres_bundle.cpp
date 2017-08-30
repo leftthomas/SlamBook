@@ -31,6 +31,29 @@ void BuildProblem(BALProblem *bal_problem, Problem *problem, const BundleParams 
     }
 }
 
+void setOrdering(BALProblem *bal_problem, Solver::Options *options, const BundleParams *params) {
+    const int num_points = bal_problem->num_points();
+    const int point_block_size = bal_problem->point_block_size();
+    double *points = bal_problem->mutable_points();
+    const int num_cameras = bal_problem->num_cameras();
+    const int cameras_block_size = bal_problem->camera_block_size();
+    double *cameras = bal_problem->mutable_cameras();
+
+    if (params->ordering == "automatic")
+        return;
+    auto *ordering = new ParameterBlockOrdering;
+//    the points come before the cameras
+    for (int i = 0; i < num_points; ++i) {
+        ordering->AddElementToGroup(points + point_block_size * i, 0);
+    }
+    for (int i = 0; i < num_cameras; ++i) {
+        ordering->AddElementToGroup(cameras + cameras_block_size * i, 1);
+    }
+    options->linear_solver_ordering.reset();
+}
+
+
+
 
 /**
  * 本程序演示了后端ceres bundle
