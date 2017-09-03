@@ -77,11 +77,23 @@ int main(int argc, char **argv) {
                     m(j, i) = mij;
                 }
             }
-
 //            gtsam信息矩阵
             gtsam::Matrix mgtsam = gtsam::Matrix6::Identity();
 //            cov rotation
             mgtsam.block(0, 0, 3, 3) = m.block(3, 3, 3, 3);
+//            cov translation
+            mgtsam.block(3, 3, 3, 3) = m.block(0, 0, 3, 3);
+//            off diagonal
+            mgtsam.block(0, 3, 3, 3) = m.block(0, 3, 3, 3);
+//            off diagonal
+            mgtsam.block(3, 0, 3, 3) = m.block(3, 0, 3, 3);
+//            高斯噪声模型
+            gtsam::SharedNoiseModel model = gtsam::noiseModel::Gaussian::Information(mgtsam);
+//            添加一个因子
+            gtsam::NonlinearFactor::shared_ptr factor(new gtsam::BetweenFactor<gtsam::Pose3>(
+                    id1, id2, gtsam::Pose3(R, t), model));
+            graph->push_back(factor);
+            cntEdge++;
         }
     }
 
