@@ -37,6 +37,12 @@ int main(int argc, char **argv) {
     gtsam::NonlinearFactorGraph::shared_ptr graph(new gtsam::NonlinearFactorGraph);
 //    初始值
     gtsam::Values::shared_ptr initial(new gtsam::Values);
+//    固定第一个顶点，在gtsam中相当于添加一个先验因子
+    gtsam::NonlinearFactorGraph graphWithPrior=*graph;
+    gtsam::Vector6 v;
+    v<<1e-6,1e-6,1e-6,1e-6,1e-6,1e-6;
+    gtsam::noiseModel::Diagonal::shared_ptr priorModel=gtsam::noiseModel::Diagonal::Variances(v);
+    gtsam::Key firstKey=0;
 //    从g2o文件中读取节点和边的信息
     int cntVertex = 0, cntEdge = 0;
     cout << "reading from g2o file" << endl;
@@ -57,6 +63,8 @@ int main(int argc, char **argv) {
             gtsam::Point3 t(data[0], data[1], data[2]);
 //            添加初始值
             initial->insert(id, gtsam::Pose3(R, t));
+//            添加先验
+            graphWithPrior.add(gtsam::PriorFactor<gtsam::Pose3>(id,gtsam::Pose3(R,t),priorModel));
             cntVertex++;
         } else if (tag == "EDGE_SE3:QUAT") {
 //            边，对应到因子图中的因子
@@ -95,6 +103,11 @@ int main(int argc, char **argv) {
             graph->push_back(factor);
             cntEdge++;
         }
+        if(!fin.good()){
+            break;
+        }
     }
+    cout<<"read total "<<cntVertex<<" vertices, "<<cntEdge<<" edges."<<endl;
+
 
 }
