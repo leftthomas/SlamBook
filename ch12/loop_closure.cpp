@@ -41,7 +41,32 @@ int main(int argc, char **argv) {
     }
 
     cout << "comparing image with images." << endl;
+    for (int i = 0; i < images.size(); ++i) {
+        DBoW3::BowVector v1;
+        vocab.transform(descriptors[i], v1);
+        for (int j = i; j < images.size(); ++j) {
+            DBoW3::BowVector v2;
+            vocab.transform(descriptors[j], v2);
+            double score = vocab.score(v1, v2);
+            cout << "image " << i << " vs image " << j << " : " << score << endl;
+        }
+        cout << endl;
+    }
 
+//    compare with database
+    cout << "comparing images with database." << endl;
+    DBoW3::Database db(vocab, false, 0);
+    for (const auto &descriptor : descriptors) {
+        db.add(descriptor);
+    }
+    cout << "database info:" << db << endl;
+    for (int i = 0; i < descriptors.size(); ++i) {
+        DBoW3::QueryResults ret;
+//        max result = 4
+        db.query(descriptors[i], ret, 4);
+        cout << "searching for image " << i << " returns " << ret << endl << endl;
+    }
+    cout << "done" << endl;
     return 0;
 }
 
