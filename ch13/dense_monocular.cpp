@@ -53,6 +53,11 @@ bool readDatasetFiles(const string &path, vector<string> &color_image_files, vec
     return true;
 }
 
+void plotDepth(const Mat &depth) {
+    imshow("depth", depth * 0.4);
+    waitKey(1);
+}
+
 //像素到相机坐标系
 inline Vector3d px2cam(const Vector2d px) {
     return Vector3d((px(0, 0) - cx) / fx, (px(1, 0) - cy) / fy, 1);
@@ -107,10 +112,13 @@ inline double getBilinearInterpolatedValue(const Mat &img, const Vector2d &pt) {
     uchar *d = &img.data[int(pt(1, 0)) * img.step + int(pt(0, 0))];
     double xx = pt(0, 0) - floor(pt(0, 0));
     double yy = pt(1, 0) - floor(pt(1, 0));
+    stringstream stream(img.step + 1);
+    int int_temp;
+    stream >> int_temp;
     return ((1 - xx) * (1 - yy) * double(d[0]) +
             xx * (1 - yy) * double(d[1]) +
             (1 - xx) * yy * double(d[img.step]) +
-            xx * yy * double(d[atoi((img.step + 1).c_str())])) / 255.0;
+            xx * yy * double(d[int_temp])) / 255.0;
 }
 
 
@@ -172,12 +180,12 @@ bool epipolarSearch(const Mat &ref, const Mat &curr, const SE3 &T_C_R, const Vec
         half_length = 100;
 
 //    显示极线
-    showEpipolarLine(ref, curr, pt_ref, px_min_curr, px_max_curr);
+//    showEpipolarLine(ref, curr, pt_ref, px_min_curr, px_max_curr);
 
 //    在极线上搜索，以深度均值点为中心，左右各取半长度
     double best_ncc = -1.0;
     Vector2d best_px_curr;
-    for (double l = -half_length; l < = half_length; l += 0.7) {
+    for (double l = -half_length; l <= half_length; l += 0.7) {
 //        待匹配点
         Vector2d px_curr = px_mean_curr + l * epipolar_direction;
         if (!inside(px_curr))
@@ -252,7 +260,7 @@ bool updateDepthFilter(const Vector2d &pt_ref, const Vector2d &pt_curr, const SE
 }
 
 //根据新的图像更新深度估计
-bool update(const Mat &ref, const Mat &curr, const SE3 &T_C_R, Mat &depth, Mat &depth_cov) {
+void update(const Mat &ref, const Mat &curr, const SE3 &T_C_R, Mat &depth, Mat &depth_cov) {
 #pragma omp parallel for
     for (int x = boarder; x < width - boarder; ++x) {
 #pragma omp parallel for
@@ -269,7 +277,7 @@ bool update(const Mat &ref, const Mat &curr, const SE3 &T_C_R, Mat &depth, Mat &
             if (!ret)
                 continue;
 //            显示匹配
-            showEpipolarMatch(ref, curr, Vector2d(x, y), pt_curr);
+//            showEpipolarMatch(ref, curr, Vector2d(x, y), pt_curr);
 //            匹配成功，更新深度图
             updateDepthFilter(Vector2d(x, y), pt_curr, T_C_R, depth, depth_cov);
         }
@@ -284,6 +292,43 @@ bool update(const Mat &ref, const Mat &curr, const SE3 &T_C_R, Mat &depth, Mat &
  * @return
  */
 int main(int argc, char **argv) {
+    if (argc != 2) {
+        cout << "Usage: dense_monocular path_to_test_dataset" << endl;
+        return -1;
+    }
 
+    // 从数据集读取数据
+    vector<string> color_image_files;
+    vector<SE3> poses_TWC;
+    bool ret = readDatasetFiles(argv[1], color_image_files, poses_TWC);
+    if (!ret) {
+        cout << "reading image files failed!" << endl;
+        return -1;
+    }
+    cout << "read total " << color_image_files.size() << " files." << endl;
+
+    // 第一张图
+    Mat ref = imread(color_image_files[0], 0);                // gray-scale image
+    SE3 pose_ref_TWC = poses_TWC[0];
+    double init_depth = 3.0;    // 深度初始值
+    double init_cov2 = 3.0;    // 方差初始值
+    Mat depth(height, width, CV_64F, init_depth);             // 深度图
+    Mat depth_cov(height, width, CV_64F, init_cov2);          // 深度图方差
+
+    for (int index = 1; index < color_image_files.size(); index++) {
+        cout << "*** loop " << index << " ***" << endl;
+        Mat curr = imread(color_image_files[index], 0);
+        if (curr.data == nullptr) continue;
+        SE3 pose_curr_TWC = poses_TWC[index];
+        SE3 pose_T_C_R = pose_curr_TWC.inverse() * pose_ref_TWC; // 坐标转换关系： T_C_W * T_W_R = T_C_R
+        update(ref, curr, pose_T_C_R, depth, depth_cov);
+        plotDepth(depth);
+        imshow("image", curr);
+        waitKey(1);
+    }
+
+    cout << "estimation returns, saving depth map ." << endl;
+    imwrite("depth.png", depth);
+    cout << "done." << endl;
     return 0;
 }
