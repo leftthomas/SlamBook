@@ -19,10 +19,42 @@ using namespace std;
  * @return
  */
 int main(int argc, char **argv) {
-    if (argc != 2) {
-        cout << "Usage: dense_monocular path_to_test_dataset" << endl;
-        return -1;
+    // 彩色图和深度图
+    vector<cv::Mat> colorImgs, depthImgs;
+    // 相机位姿
+    vector<Eigen::Isometry3d> poses;
+
+    ifstream fin("../../ch13/data/pose.txt");
+    if (!fin) {
+        cerr << "can't find pose file" << endl;
+        return 1;
     }
 
+    for (int i = 0; i < 5; i++) {
+        //图像文件格式
+        boost::format fmt("../../ch13/data/%s/%d.%s");
+        colorImgs.push_back(cv::imread((fmt % "color" % (i + 1) % "png").str()));
+        // 使用-1读取原始图像
+        depthImgs.push_back(cv::imread((fmt % "depth" % (i + 1) % "pgm").str(), -1));
+
+        double data[7] = {0};
+        for (int j = 0; j < 7; j++) {
+            fin >> data[j];
+        }
+        Eigen::Quaterniond q(data[6], data[3], data[4], data[5]);
+        Eigen::Isometry3d T(q);
+        T.pretranslate(Eigen::Vector3d(data[0], data[1], data[2]));
+        poses.push_back(T);
+    }
+
+    // 计算点云并拼接
+    // 相机内参
+    double cx = 325.5;
+    double cy = 253.5;
+    double fx = 518.0;
+    double fy = 519.0;
+    double depthScale = 1000.0;
+
+    cout << "正在将图像转换为点云..." << endl;
     return 0;
 }
