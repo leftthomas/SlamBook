@@ -10,6 +10,10 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 # Sophus
 find_package(Sophus REQUIRED)
 include_directories(${Sophus_INCLUDE_DIRS})
+# pcl
+find_package(PCL REQUIRED COMPONENT common io filters)
+include_directories(${PCL_INCLUDE_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 # 添加一个可执行程序
 add_executable(dense_monocular dense_monocular.cpp)

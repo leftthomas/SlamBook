@@ -180,7 +180,7 @@ bool epipolarSearch(const Mat &ref, const Mat &curr, const SE3 &T_C_R, const Vec
         half_length = 100;
 
 //    显示极线
-//    showEpipolarLine(ref, curr, pt_ref, px_min_curr, px_max_curr);
+    showEpipolarLine(ref, curr, pt_ref, px_min_curr, px_max_curr);
 
 //    在极线上搜索，以深度均值点为中心，左右各取半长度
     double best_ncc = -1.0;
@@ -277,7 +277,7 @@ void update(const Mat &ref, const Mat &curr, const SE3 &T_C_R, Mat &depth, Mat &
             if (!ret)
                 continue;
 //            显示匹配
-//            showEpipolarMatch(ref, curr, Vector2d(x, y), pt_curr);
+            showEpipolarMatch(ref, curr, Vector2d(x, y), pt_curr);
 //            匹配成功，更新深度图
             updateDepthFilter(Vector2d(x, y), pt_curr, T_C_R, depth, depth_cov);
         }
