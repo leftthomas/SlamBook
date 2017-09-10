@@ -19,4 +19,5 @@ add_definitions(${PCL_DEFINITIONS})
 add_executable(dense_monocular dense_monocular.cpp)
 target_link_libraries(dense_monocular ${OpenCV_LIBS} ${Sophus_LIBRARIES})
 
-
+add_executable(dense_rgbd dense_rgbd.cpp)
+target_link_libraries(dense_rgbd ${OpenCV_LIBS} ${PCL_LIBRARIES})
