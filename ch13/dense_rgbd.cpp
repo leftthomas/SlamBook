@@ -56,5 +56,65 @@ int main(int argc, char **argv) {
     double depthScale = 1000.0;
 
     cout << "正在将图像转换为点云..." << endl;
+    // 定义点云使用的格式：这里用的是XYZRGB
+    typedef pcl::PointXYZRGB PointT;
+    typedef pcl::PointCloud<PointT> PointCloud;
+
+    // 新建一个点云
+    PointCloud::Ptr pointCloud(new PointCloud);
+    for (int i = 0; i < 5; i++) {
+        PointCloud::Ptr current(new PointCloud);
+        cout << "转换图像中: " << i + 1 << endl;
+        cv::Mat color = colorImgs[i];
+        cv::Mat depth = depthImgs[i];
+        Eigen::Isometry3d T = poses[i];
+        for (int v = 0; v < color.rows; v++)
+            for (int u = 0; u < color.cols; u++) {
+                // 深度值
+                unsigned int d = depth.ptr<unsigned short>(v)[u];
+                // 为0表示没有测量到
+                if (d == 0) continue;
+                // 深度太大时不稳定，去掉
+                if (d >= 7000) continue;
+                Eigen::Vector3d point;
+                point[2] = double(d) / depthScale;
+                point[0] = (u - cx) * point[2] / fx;
+                point[1] = (v - cy) * point[2] / fy;
+                Eigen::Vector3d pointWorld = T * point;
+
+                PointT p;
+                p.x = pointWorld[0];
+                p.y = pointWorld[1];
+                p.z = pointWorld[2];
+                p.b = color.data[v * color.step + u * color.channels()];
+                p.g = color.data[v * color.step + u * color.channels() + 1];
+                p.r = color.data[v * color.step + u * color.channels() + 2];
+                current->points.push_back(p);
+            }
+        // depth filter and statistical removal
+        PointCloud::Ptr tmp(new PointCloud);
+        pcl::StatisticalOutlierRemoval<PointT> statistical_filter;
+        statistical_filter.setMeanK(50);
+        statistical_filter.setStddevMulThresh(1.0);
+        statistical_filter.setInputCloud(current);
+        statistical_filter.filter(*tmp);
+        (*pointCloud) += *tmp;
+    }
+
+    pointCloud->is_dense = false;
+    cout << "点云共有" << pointCloud->size() << "个点." << endl;
+
+    // voxel filter
+    pcl::VoxelGrid<PointT> voxel_filter;
+    // resolution
+    voxel_filter.setLeafSize(0.01, 0.01, 0.01);
+    PointCloud::Ptr tmp(new PointCloud);
+    voxel_filter.setInputCloud(pointCloud);
+    voxel_filter.filter(*tmp);
+    tmp->swap(*pointCloud);
+
+    cout << "滤波之后，点云共有" << pointCloud->size() << "个点." << endl;
+
+    pcl::io::savePCDFileBinary("map.pcd", *pointCloud);
     return 0;
 }
